@@ -4,6 +4,7 @@ use crate::voicevox::VoicevoxClient;
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::collections::HashMap;
+use std::io::Write;
 use url::Url;
 // fn main() {
 //     let mut cron = Cron::new(Local);
@@ -101,22 +102,38 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
 
     for hour in 0..24 {
         let mut minute_queries: HashMap<u32, String> = HashMap::new();
-
         for minute in [0, 15, 30, 45] {
-            let text = format!("{}時{}分です", hour, minute);
-
-            dbg!(&text);
-            let query = client.audio_query(&text, speaker_id)
-                .with_context(|| format!("Failed to generate audio query for '{}'", text))?;
-
+            let text = dbg!(format!("{}時{}分です", hour, minute));
+            let query = client.audio_query(&text, speaker_id)?;
             minute_queries.insert(minute, query);
         }
-
         queries.insert(hour, minute_queries);
     }
 
     println!("Generated {} queries in total", queries.len() * 4);
-    dbg!(&queries[&0][&0]);
+
+    // 時間ごとにボイスファイルを生成
+    for hour in 0..24 {
+        println!("Generating audio files for {}時...", hour);
+
+        let hour_queries = queries.get(&hour)
+            .context("Hour queries not found")?;
+
+        let query_vec: Vec<String> = [0, 15, 30, 45]
+            .iter()
+            .map(|minute| hour_queries.get(minute).unwrap().clone())
+            .collect();
+
+        let zip_data = client.multi_synthesis(&query_vec, speaker_id)?;
+
+        // 時間ごとのZIPファイルを保存
+        let zip_filename = format!("voice_files_{:02}.zip", hour);
+        std::fs::write(&zip_filename, zip_data)?;
+
+        println!("Generated ZIP file: {}", zip_filename);
+    }
+
+    println!("All voice files generated successfully!");
 
     Ok(())
 }

@@ -150,4 +150,34 @@ impl VoicevoxClient {
         let res = response.text()?;
         Ok(res)
     }
+
+    pub fn multi_synthesis(&self, queries: &[String], speaker_id: u32) -> Result<Vec<u8>> {
+        let mut req_url = self.base_url.join("multi_synthesis")?;
+
+        {
+            let mut query_pairs = req_url.query_pairs_mut();
+            query_pairs.append_pair("speaker", &speaker_id.to_string());
+        }
+
+        // クエリ配列をJSON配列に変換
+        let queries_json: Vec<serde_json::Value> = queries
+            .iter()
+            .map(|q| serde_json::from_str(q))
+            .collect::<Result<Vec<_>, _>>()
+            .context("Failed to parse audio queries as JSON")?;
+
+        let response = self
+            .client
+            .post(req_url)
+            .header("Content-Type", "application/json")
+            .json(&queries_json)
+            .send()
+            .with_context(|| "Failed to request VOICEVOX multi_synthesis endpoint")?;
+
+        if !response.status().is_success() {
+            bail!("multi_synthesis request failed with status: {}", response.status());
+        }
+
+        Ok(response.bytes()?.to_vec())
+    }
 }
