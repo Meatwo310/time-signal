@@ -46,6 +46,21 @@ impl VoicevoxClient {
         Ok(response.json()?)
     }
 
+    fn post(&self, endpoint: &str) -> Result<()> {
+        let req_url = self.base_url.join(endpoint)?;
+        let response = self
+            .client
+            .post(req_url)
+            .send()
+            .with_context(|| format!("Failed to request VOICEVOX endpoint: {}", endpoint))?;
+
+        if !response.status().is_success() {
+            bail!("Request to VOICEVOX failed with status: {}", response.status());
+        }
+
+        Ok(())
+    }
+
     pub fn get_version(&self) -> Result<String> {
         self.get("version")
     }
@@ -74,5 +89,10 @@ impl VoicevoxClient {
     pub fn is_initialized_speaker(&self, speaker_id: u32) -> Result<bool> {
         let endpoint = format!("is_initialized_speaker?speaker={}", speaker_id);
         self.get(&endpoint)
+    }
+
+    pub fn initialize_speaker(&self, speaker_id: u32) -> Result<()> {
+        let endpoint = format!("initialize_speaker?speaker={}&skip_reinit=true", speaker_id);
+        self.post(&endpoint)
     }
 }
