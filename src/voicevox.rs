@@ -15,6 +15,38 @@ pub struct Style {
     pub id: u32,
 }
 
+// #[derive(Deserialize)]
+// pub struct AudioQuery {
+//     pub accent_phrases: Vec<AccentPhrase>,
+//     pub speed_scale: f64,
+//     pub pitch_scale: f64,
+//     pub intonation_scale: f64,
+//     pub volume_scale: f64,
+//     pub pre_phoneme_length: f64,
+//     pub post_phoneme_length: f64,
+//     pub output_sampling_rate: u32,
+//     pub output_stereo: bool,
+//     pub kana: String,
+// }
+//
+// #[derive(Deserialize)]
+// pub struct AccentPhrase {
+//     pub moras: Vec<Mora>,
+//     pub accent: u32,
+//     pub pause_mora: Option<Mora>,
+//     pub is_interrogative: bool,
+// }
+//
+// #[derive(Deserialize)]
+// pub struct Mora {
+//     pub text: String,
+//     pub consonant: Option<String>,
+//     pub consonant_length: Option<f64>,
+//     pub vowel: String,
+//     pub vowel_length: f64,
+//     pub pitch: f64,
+// }
+
 pub struct VoicevoxClient {
     base_url: Url,
     client: reqwest::blocking::Client,
@@ -94,5 +126,28 @@ impl VoicevoxClient {
     pub fn initialize_speaker(&self, speaker_id: u32) -> Result<()> {
         let endpoint = format!("initialize_speaker?speaker={}&skip_reinit=true", speaker_id);
         self.post(&endpoint)
+    }
+
+    pub fn audio_query(&self, text: &str, speaker_id: u32) -> Result<String> {
+        let mut req_url = self.base_url.join("audio_query")?;
+
+        {
+            let mut query_pairs = req_url.query_pairs_mut();
+            query_pairs.append_pair("text", text);
+            query_pairs.append_pair("speaker", &speaker_id.to_string());
+        }
+
+        let response = self
+            .client
+            .post(req_url)
+            .send()
+            .with_context(|| "Failed to request VOICEVOX audio_query endpoint")?;
+
+        if !response.status().is_success() {
+            bail!("audio_query request failed with status: {}", response.status());
+        }
+
+        let res = response.text()?;
+        Ok(res)
     }
 }

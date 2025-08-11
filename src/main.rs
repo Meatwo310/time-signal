@@ -3,6 +3,7 @@ mod voicevox;
 use crate::voicevox::VoicevoxClient;
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
+use std::collections::HashMap;
 use url::Url;
 // fn main() {
 //     let mut cron = Cron::new(Local);
@@ -87,6 +88,35 @@ fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
         client.initialize_speaker(speaker_id)?;
         println!("Speaker initialized successfully!");
     }
+
+    generate_voice_files(&client, speaker_id)?;
+
+    Ok(())
+}
+
+fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> {
+    println!("Generating queries...");
+
+    let mut queries: HashMap<u32, HashMap<u32, String>> = HashMap::new();
+
+    for hour in 0..24 {
+        let mut minute_queries: HashMap<u32, String> = HashMap::new();
+
+        for minute in [0, 15, 30, 45] {
+            let text = format!("{}時{}分です", hour, minute);
+
+            dbg!(&text);
+            let query = client.audio_query(&text, speaker_id)
+                .with_context(|| format!("Failed to generate audio query for '{}'", text))?;
+
+            minute_queries.insert(minute, query);
+        }
+
+        queries.insert(hour, minute_queries);
+    }
+
+    println!("Generated {} queries in total", queries.len() * 4);
+    dbg!(&queries[&0][&0]);
 
     Ok(())
 }
