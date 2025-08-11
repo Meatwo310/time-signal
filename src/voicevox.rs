@@ -15,38 +15,6 @@ pub struct Style {
     pub id: u32,
 }
 
-// #[derive(Deserialize)]
-// pub struct AudioQuery {
-//     pub accent_phrases: Vec<AccentPhrase>,
-//     pub speed_scale: f64,
-//     pub pitch_scale: f64,
-//     pub intonation_scale: f64,
-//     pub volume_scale: f64,
-//     pub pre_phoneme_length: f64,
-//     pub post_phoneme_length: f64,
-//     pub output_sampling_rate: u32,
-//     pub output_stereo: bool,
-//     pub kana: String,
-// }
-//
-// #[derive(Deserialize)]
-// pub struct AccentPhrase {
-//     pub moras: Vec<Mora>,
-//     pub accent: u32,
-//     pub pause_mora: Option<Mora>,
-//     pub is_interrogative: bool,
-// }
-//
-// #[derive(Deserialize)]
-// pub struct Mora {
-//     pub text: String,
-//     pub consonant: Option<String>,
-//     pub consonant_length: Option<f64>,
-//     pub vowel: String,
-//     pub vowel_length: f64,
-//     pub pitch: f64,
-// }
-
 pub struct VoicevoxClient {
     base_url: Url,
     client: reqwest::blocking::Client,

@@ -33,6 +33,7 @@ enum Commands {
     Run {
     }
 }
+
 fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
     let client = VoicevoxClient::new(Url::parse(&url)
         .context("Invalid URL provided for VOICEVOX server")?
