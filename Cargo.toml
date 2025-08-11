@@ -1,0 +1,13 @@
+[package]
+name = "time-signal"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cron_tab = { version = "0.2", features = ["sync"] }
+chrono = "0.4.41"
+reqwest = { version = "0.12.22", features = ["blocking", "json"] }
+anyhow = "1.0.98"
+semver = "1.0.26"
+clap = { version = "4.5.43", features = ["derive"] }
+
