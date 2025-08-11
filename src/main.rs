@@ -1,5 +1,6 @@
 mod voicevox;
 
+use crate::voicevox::VoicevoxClient;
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use url::Url;
@@ -46,11 +47,13 @@ enum Commands {
     }
 }
 fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
-    let req_url = &Url::parse(&url)
-        .context("Invalid URL provided for VOICEVOX server")?;
-    voicevox::check_voicevox_version(req_url)?;
+    let client = VoicevoxClient::new(Url::parse(&url)
+        .context("Invalid URL provided for VOICEVOX server")?
+    );
 
-    let speakers = voicevox::list_speakers(req_url)?;
+    client.check_version()?;
+
+    let speakers = client.list_speakers()?;
 
     if speaker_id.is_none() {
         println!("\nList of speakers:");
@@ -63,18 +66,20 @@ fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
         return Ok(());
     }
 
-    let speaker_id = speaker_id.unwrap();
+    let speaker_id = speaker_id.context("Speaker ID should be provided here")?;
     let speaker_and_style = speakers.iter()
         .find_map(|speaker| speaker.styles.iter()
             .find(|style| style.id == speaker_id)
             .map(|style| (speaker.name.as_str(), style.name.as_str()))
-        ).unwrap();
+        ).with_context(|| format!("Speaker ID {} not found", speaker_id))?;
+
     println!(
         "{}. {} ({})",
         speaker_id,
         speaker_and_style.0,
         speaker_and_style.1,
     );
+
     Ok(())
 }
 

@@ -15,43 +15,59 @@ pub struct Style {
     pub id: u32,
 }
 
-fn get_voicevox_version(url: &Url) -> Result<String> {
-    let req_url = url.join("version")?;
-    let response = reqwest::blocking::get(req_url)
-        .context("Failed to fetch VOICEVOX version. Is the server running?")?;
-
-    if !response.status().is_success() {
-        bail!("Request to VOICEVOX failed with status: {}", response.status());
-    }
-
-    Ok(response.json()?)
+pub struct VoicevoxClient {
+    base_url: Url,
+    client: reqwest::blocking::Client,
 }
 
-pub fn check_voicevox_version(url: &Url) -> Result<()> {
-    let required_version = VersionReq::parse(">=0.24.0")?;
-    let current_version = Version::parse(get_voicevox_version(&url)?.as_str())?;
-
-    if required_version.matches(&current_version) {
-        println!("VOICEVOX: {}", current_version);
-    } else {
-        eprintln!(
-            "VOICEVOX {} does not satisfy the required version: {}",
-            current_version,
-            required_version
-        );
+impl VoicevoxClient {
+    pub fn new(base_url: Url) -> Self {
+        Self {
+            base_url,
+            client: reqwest::blocking::Client::new(),
+        }
     }
 
-    Ok(())
-}
+    fn get<T>(&self, endpoint: &str) -> Result<T>
+    where
+        T: for<'de> Deserialize<'de>,
+    {
+        let req_url = self.base_url.join(endpoint)?;
+        let response = self
+            .client
+            .get(req_url)
+            .send()
+            .with_context(|| format!("Failed to request VOICEVOX endpoint: {}", endpoint))?;
 
-pub fn list_speakers(url: &Url) -> Result<Vec<Speaker>> {
-    let req_url = url.join("speakers")?;
-    let response = reqwest::blocking::get(req_url)
-        .context("Failed to fetch speakers from VOICEVOX server.")?;
+        if !response.status().is_success() {
+            bail!("Request to VOICEVOX failed with status: {}", response.status());
+        }
 
-    if !response.status().is_success() {
-        bail!("Request to VOICEVOX failed with status: {}", response.status());
+        Ok(response.json()?)
     }
 
-    Ok(serde_json::from_str(response.text()?.as_str())?)
+    pub fn get_version(&self) -> Result<String> {
+        self.get("version")
+    }
+
+    pub fn check_version(&self) -> Result<()> {
+        let required_version = VersionReq::parse(">=0.24.0")?;
+        let current_version = Version::parse(self.get_version()?.as_str())?;
+
+        if required_version.matches(&current_version) {
+            println!("VOICEVOX: {}", current_version);
+        } else {
+            eprintln!(
+                "VOICEVOX {} does not satisfy the required version: {}",
+                current_version,
+                required_version
+            );
+        }
+
+        Ok(())
+    }
+
+    pub fn list_speakers(&self) -> Result<Vec<Speaker>> {
+        self.get("speakers")
+    }
 }
