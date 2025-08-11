@@ -1305,6 +1305,8 @@ dependencies = [
  "cron_tab",
  "reqwest",
  "semver",
+ "serde",
+ "serde_json",
  "url",
 ]
 

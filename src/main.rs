@@ -1,9 +1,8 @@
 mod voicevox;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use url::Url;
-use voicevox::check_voicevox_version;
 // fn main() {
 //     let mut cron = Cron::new(Local);
 //
@@ -35,6 +34,8 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Gen {
+        /// The speaker ID to use for the voice generation. Leave empty to list all speakers.
+        speaker_id: Option<u32>,
         #[arg(short, long, default_value = "http://127.0.0.1:50021/")]
         url: String,
     },
@@ -44,8 +45,36 @@ enum Commands {
 fn main() -> Result<()> {
     let args = Cli::parse();
     match args.command.unwrap_or(Commands::Run {}) {
-        Commands::Gen { url } => {
-            check_voicevox_version(&Url::parse(&url)?)?;
+        Commands::Gen { speaker_id, url } => {
+            let req_url = &Url::parse(&url)
+                .context("Invalid URL provided for VOICEVOX server")?;
+            voicevox::check_voicevox_version(req_url)?;
+
+            let speakers = voicevox::list_speakers(req_url)?;
+
+            if speaker_id.is_none() {
+                println!("\nList of speakers:");
+                for speaker in speakers {
+                    println!("\n{}:", speaker.name);
+                    for style in speaker.styles {
+                        println!("{:4}. {}", style.id, style.name);
+                    }
+                }
+                return Ok(());
+            }
+
+            let speaker_id = speaker_id.unwrap();
+            let speaker_and_style = speakers.iter()
+                .find_map(|speaker| speaker.styles.iter()
+                    .find(|style| style.id == speaker_id)
+                    .map(|style| (speaker.name.as_str(), style.name.as_str()))
+                ).unwrap();
+            println!(
+                "{}. {} ({})",
+                speaker_id,
+                speaker_and_style.0,
+                speaker_and_style.1,
+            );
         }
         Commands::Run { .. } => {
             println!("Running!");
