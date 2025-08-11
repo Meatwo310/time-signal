@@ -1305,6 +1305,7 @@ dependencies = [
  "cron_tab",
  "reqwest",
  "semver",
+ "url",
 ]
 
 [[package]]

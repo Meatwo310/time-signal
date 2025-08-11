@@ -1,8 +1,9 @@
 mod voicevox;
 
 use anyhow::Result;
+use clap::{Parser, Subcommand};
+use url::Url;
 use voicevox::check_voicevox_version;
-
 // fn main() {
 //     let mut cron = Cron::new(Local);
 //
@@ -25,7 +26,30 @@ use voicevox::check_voicevox_version;
 //     cron.stop();
 // }
 
+#[derive(Parser)]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    Gen {
+        #[arg(short, long, default_value = "http://127.0.0.1:50021/")]
+        url: String,
+    },
+    Run {
+    }
+}
 fn main() -> Result<()> {
-    check_voicevox_version()?;
+    let args = Cli::parse();
+    match args.command.unwrap_or(Commands::Run {}) {
+        Commands::Gen { url } => {
+            check_voicevox_version(&Url::parse(&url)?)?;
+        }
+        Commands::Run { .. } => {
+            println!("Running!");
+        }
+    }
     Ok(())
 }
