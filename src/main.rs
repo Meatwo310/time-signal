@@ -4,8 +4,9 @@ use crate::voicevox::VoicevoxClient;
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::collections::HashMap;
-use std::io::Write;
+use std::io::{Cursor, Read};
 use url::Url;
+use zip::ZipArchive;
 // fn main() {
 //     let mut cron = Cron::new(Local);
 //
@@ -103,7 +104,7 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
     for hour in 0..24 {
         let mut minute_queries: HashMap<u32, String> = HashMap::new();
         for minute in [0, 15, 30, 45] {
-            let text = dbg!(format!("{}時{}分です", hour, minute));
+            let text = format!("{}時{}分です", hour, minute);
             let query = client.audio_query(&text, speaker_id)?;
             minute_queries.insert(minute, query);
         }
@@ -111,6 +112,9 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
     }
 
     println!("Generated {} queries in total", queries.len() * 4);
+
+    // voice_filesディレクトリを作成
+    std::fs::create_dir_all("voice_files")?;
 
     // 時間ごとにボイスファイルを生成
     for hour in 0..24 {
@@ -126,14 +130,30 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
 
         let zip_data = client.multi_synthesis(&query_vec, speaker_id)?;
 
-        // 時間ごとのZIPファイルを保存
-        let zip_filename = format!("voice_files_{:02}.zip", hour);
-        std::fs::write(&zip_filename, zip_data)?;
+        // ZIPデータをメモリ上で展開
+        let cursor = Cursor::new(zip_data);
+        let mut archive = ZipArchive::new(cursor)?;
 
-        println!("Generated ZIP file: {}", zip_filename);
+        // 時間ごとのサブディレクトリを作成
+        let hour_dir = format!("voice_files/{:02}", hour);
+        std::fs::create_dir_all(&hour_dir)?;
+
+        // ZIPファイル内の各ファイルを展開して保存
+        for i in 0..archive.len() {
+            let mut file = archive.by_index(i)?;
+
+            if file.is_file() {
+                let file_name = file.name().to_string();
+                let mut buffer = Vec::new();
+                file.read_to_end(&mut buffer)?;
+
+                let output_path = format!("{}/{}", hour_dir, file_name);
+                std::fs::write(&output_path, buffer)?;
+            }
+        }
     }
 
-    println!("All voice files generated successfully!");
+    println!("All voice files generated and saved successfully!");
 
     Ok(())
 }
