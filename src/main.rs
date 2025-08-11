@@ -2,32 +2,16 @@ mod voicevox;
 
 use crate::voicevox::VoicevoxClient;
 use anyhow::{Context, Result};
+use chrono::{Local, Timelike};
 use clap::{Parser, Subcommand};
+use cron_tab::Cron;
 use std::collections::HashMap;
+use std::fs::File;
 use std::io::{Cursor, Read};
+use std::thread::sleep;
+use std::time::Duration;
 use url::Url;
 use zip::ZipArchive;
-// fn main() {
-//     let mut cron = Cron::new(Local);
-//
-//     // https://github.com/tuyentv96/rust-crontab?tab=readme-ov-file#-cron-expression-format
-//     // ┌───────────── second (0 - 59)
-//     // │ ┌─────────── minute (0 - 59)
-//     // │ │ ┌───────── hour (0 - 23)
-//     // │ │ │ ┌─────── day of month (1 - 31)
-//     // │ │ │ │ ┌───── month (1 - 12)
-//     // │ │ │ │ │ ┌─── day of week (0 - 6) (Sunday to Saturday)
-//     // │ │ │ │ │ │ ┌─ year (1970 - 3000)
-//     // │ │ │ │ │ │ │
-//     // * * * * * * *
-//     cron.add_fn("* */15 * * * * *", || {
-//         println!("HELLO WORLD");
-//     }).unwrap();
-//
-//     cron.start();
-//     sleep(Duration::from_secs(20));
-//     cron.stop();
-// }
 
 #[derive(Parser)]
 struct Cli {
@@ -153,8 +137,38 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
 }
 
 fn handle_run() -> Result<()> {
-    println!("Running!");
-    Ok(())
+    let mut cron = Cron::new(Local);
+    // https://github.com/tuyentv96/rust-crontab?tab=readme-ov-file#-cron-expression-format
+    // ┌───────────── second (0 - 59)
+    // │ ┌─────────── minute (0 - 59)
+    // │ │ ┌───────── hour (0 - 23)
+    // │ │ │ ┌─────── day of month (1 - 31)
+    // │ │ │ │ ┌───── month (1 - 12)
+    // │ │ │ │ │ ┌─── day of week (0 - 6) (Sunday to Saturday)
+    // │ │ │ │ │ │ ┌─ year (1970 - 3000)
+    // │ │ │ │ │ │ │
+    // * * * * * * *
+    cron.add_fn("0 */15 * * * * *", || {
+    // cron.add_fn("*/10 * * * * * *", || {
+        let now = Local::now();
+        let hour = now.hour();
+        let minute = now.minute() / 15 * 15;
+
+        let filename = format!("voice_files/{:02}-{:02}.wav", hour, minute);
+        let file = File::open(&filename)
+            .expect(&format!("Failed to open {}", filename));
+
+        let mut handle = rodio::OutputStreamBuilder::open_default_stream().unwrap();
+        handle.log_on_drop(false);
+        let sink = rodio::play(handle.mixer(), file).unwrap();
+        sink.sleep_until_end();
+    })?;
+
+    cron.start();
+    println!("Cron job started!");
+    loop {
+        sleep(Duration::from_secs(3600));
+    }
 }
 
 fn main() -> Result<()> {
