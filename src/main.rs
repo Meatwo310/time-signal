@@ -134,21 +134,19 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
         let cursor = Cursor::new(zip_data);
         let mut archive = ZipArchive::new(cursor)?;
 
-        // 時間ごとのサブディレクトリを作成
-        let hour_dir = format!("voice_files/{:02}", hour);
-        std::fs::create_dir_all(&hour_dir)?;
-
         // ZIPファイル内の各ファイルを展開して保存
-        for i in 0..archive.len() {
-            let mut file = archive.by_index(i)?;
+        let minutes = [0, 15, 30, 45];
+        for (i, &minute) in minutes.iter().enumerate() {
+            if i < archive.len() {
+                let mut file = archive.by_index(i)?;
 
-            if file.is_file() {
-                let file_name = file.name().to_string();
-                let mut buffer = Vec::new();
-                file.read_to_end(&mut buffer)?;
+                if file.is_file() {
+                    let mut buffer = Vec::new();
+                    file.read_to_end(&mut buffer)?;
 
-                let output_path = format!("{}/{}", hour_dir, file_name);
-                std::fs::write(&output_path, buffer)?;
+                    let output_path = format!("voice_files/{:02}-{:02}.wav", hour, minute);
+                    std::fs::write(&output_path, buffer)?;
+                }
             }
         }
     }
