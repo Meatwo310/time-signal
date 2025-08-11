@@ -113,37 +113,28 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
 
     println!("Generated {} queries in total", queries.len() * 4);
 
-    // voice_filesディレクトリを作成
     std::fs::create_dir_all("voice_files")?;
 
-    // 時間ごとにボイスファイルを生成
     for hour in 0..24 {
         println!("Generating audio files for {}時...", hour);
 
-        let hour_queries = queries.get(&hour)
-            .context("Hour queries not found")?;
-
+        let hour_queries = queries.get(&hour).unwrap();
         let query_vec: Vec<String> = [0, 15, 30, 45]
             .iter()
             .map(|minute| hour_queries.get(minute).unwrap().clone())
             .collect();
-
         let zip_data = client.multi_synthesis(&query_vec, speaker_id)?;
 
-        // ZIPデータをメモリ上で展開
         let cursor = Cursor::new(zip_data);
         let mut archive = ZipArchive::new(cursor)?;
 
-        // ZIPファイル内の各ファイルを展開して保存
         let minutes = [0, 15, 30, 45];
         for (i, &minute) in minutes.iter().enumerate() {
             if i < archive.len() {
                 let mut file = archive.by_index(i)?;
-
                 if file.is_file() {
                     let mut buffer = Vec::new();
                     file.read_to_end(&mut buffer)?;
-
                     let output_path = format!("voice_files/{:02}-{:02}.wav", hour, minute);
                     std::fs::write(&output_path, buffer)?;
                 }
