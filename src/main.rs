@@ -34,8 +34,11 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Gen {
-        /// The speaker ID to use for the voice generation. Leave empty to list all speakers.
+        /// The speaker ID to use for the voice generation.
+        /// Leave empty to list all speakers.
         speaker_id: Option<u32>,
+
+        /// The URL of the VOICEVOX server.
         #[arg(short, long, default_value = "http://127.0.0.1:50021/")]
         url: String,
     },
