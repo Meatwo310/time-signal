@@ -104,10 +104,11 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
     for hour in 0..24 {
         let mut minute_queries: HashMap<u32, String> = HashMap::new();
         for minute in [0, 15, 30, 45] {
+            let hour_text = if hour == 0 { "零" } else { &hour.to_string() };
             let text = if minute == 0 {
-                format!("{}時です", hour)
+                format!("{}時です", hour_text)
             } else {
-                format!("{}時{}分です", hour, minute)
+                format!("{}時{}分です", hour_text, minute)
             };
             let query = client.audio_query(&text, speaker_id)?;
             minute_queries.insert(minute, query);
