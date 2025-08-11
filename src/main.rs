@@ -80,6 +80,13 @@ fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
         speaker_and_style.1,
     );
 
+    let is_initialized = client.is_initialized_speaker(speaker_id)?;
+    if is_initialized {
+        println!("Speaker is initialized.");
+    } else {
+        println!("Speaker is NOT initialized.");
+    }
+
     Ok(())
 }
 

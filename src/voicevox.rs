@@ -70,4 +70,9 @@ impl VoicevoxClient {
     pub fn list_speakers(&self) -> Result<Vec<Speaker>> {
         self.get("speakers")
     }
+
+    pub fn is_initialized_speaker(&self, speaker_id: u32) -> Result<bool> {
+        let endpoint = format!("is_initialized_speaker?speaker={}", speaker_id);
+        self.get(&endpoint)
+    }
 }
