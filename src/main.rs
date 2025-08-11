@@ -42,43 +42,49 @@ enum Commands {
     Run {
     }
 }
+fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
+    let req_url = &Url::parse(&url)
+        .context("Invalid URL provided for VOICEVOX server")?;
+    voicevox::check_voicevox_version(req_url)?;
+
+    let speakers = voicevox::list_speakers(req_url)?;
+
+    if speaker_id.is_none() {
+        println!("\nList of speakers:");
+        for speaker in speakers {
+            println!("\n{}:", speaker.name);
+            for style in speaker.styles {
+                println!("{:4}. {}", style.id, style.name);
+            }
+        }
+        return Ok(());
+    }
+
+    let speaker_id = speaker_id.unwrap();
+    let speaker_and_style = speakers.iter()
+        .find_map(|speaker| speaker.styles.iter()
+            .find(|style| style.id == speaker_id)
+            .map(|style| (speaker.name.as_str(), style.name.as_str()))
+        ).unwrap();
+    println!(
+        "{}. {} ({})",
+        speaker_id,
+        speaker_and_style.0,
+        speaker_and_style.1,
+    );
+    Ok(())
+}
+
+fn handle_run() -> Result<()> {
+    println!("Running!");
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let args = Cli::parse();
     match args.command.unwrap_or(Commands::Run {}) {
-        Commands::Gen { speaker_id, url } => {
-            let req_url = &Url::parse(&url)
-                .context("Invalid URL provided for VOICEVOX server")?;
-            voicevox::check_voicevox_version(req_url)?;
-
-            let speakers = voicevox::list_speakers(req_url)?;
-
-            if speaker_id.is_none() {
-                println!("\nList of speakers:");
-                for speaker in speakers {
-                    println!("\n{}:", speaker.name);
-                    for style in speaker.styles {
-                        println!("{:4}. {}", style.id, style.name);
-                    }
-                }
-                return Ok(());
-            }
-
-            let speaker_id = speaker_id.unwrap();
-            let speaker_and_style = speakers.iter()
-                .find_map(|speaker| speaker.styles.iter()
-                    .find(|style| style.id == speaker_id)
-                    .map(|style| (speaker.name.as_str(), style.name.as_str()))
-                ).unwrap();
-            println!(
-                "{}. {} ({})",
-                speaker_id,
-                speaker_and_style.0,
-                speaker_and_style.1,
-            );
-        }
-        Commands::Run { .. } => {
-            println!("Running!");
-        }
+        Commands::Gen { speaker_id, url } => handle_gen(speaker_id, url)?,
+        Commands::Run { .. } => handle_run()?,
     }
     Ok(())
 }
