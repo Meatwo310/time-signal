@@ -5,6 +5,8 @@ on:
   push:
     paths:
       - 'Cargo.lock'
+      - 'about.hbs'
+      - 'about.toml'
 
 permissions:
   contents: write
