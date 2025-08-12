@@ -25,6 +25,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// 音声ファイルを事前生成します。VOICEVOXサーバーが必要です。
     Gen {
         /// 音声生成に使用するスタイルID。
         /// 空の場合はすべてのスタイルを一覧表示します
@@ -38,6 +39,7 @@ enum Commands {
         #[arg(short, long, default_value = "15")]
         interval: u8,
     },
+    /// 一定間隔で時報を再生します。音声ファイルを事前に生成する必要があります。
     Run {
         /// 時報の間隔。15分を指定すると、毎時0分、15分、30分、45分に音声が再生されます。
         #[arg(short, long, default_value = "15")]
