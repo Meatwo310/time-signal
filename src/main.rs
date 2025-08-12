@@ -22,16 +22,15 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Gen {
-        /// The speaker ID to use for the voice generation.
-        /// Leave empty to list all speakers.
+        /// 音声生成に使用するスタイルID。
+        /// 空の場合はすべてのスタイルを一覧表示します
         speaker_id: Option<u32>,
 
-        /// The URL of the VOICEVOX server.
+        /// VOICEVOXサーバーのURL
         #[arg(short, long, default_value = "http://127.0.0.1:50021/")]
         url: String,
     },
     Run {
-        /// The cron expression to run the voice generation.
         #[arg(short, long, default_value = "0 */15 * * * *")]
         cron_spec: String,
     }
@@ -39,7 +38,7 @@ enum Commands {
 
 fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
     let client = VoicevoxClient::new(Url::parse(&url)
-        .context("Invalid URL provided for VOICEVOX server")?
+        .context("VOICEVOXサーバーのURLが不正です")?
     );
 
     client.check_version()?;
@@ -47,7 +46,7 @@ fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
     let speakers = client.list_speakers()?;
 
     if speaker_id.is_none() {
-        println!("\nList of speakers:");
+        println!("\nスタイル一覧:");
         for speaker in speakers {
             println!("\n{}:", speaker.name);
             for style in speaker.styles {
@@ -57,12 +56,12 @@ fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
         return Ok(());
     }
 
-    let speaker_id = speaker_id.context("Speaker ID should be provided here")?;
+    let speaker_id = speaker_id.context("ここでスタイルIDが提供されるべきです")?;
     let speaker_and_style = speakers.iter()
         .find_map(|speaker| speaker.styles.iter()
             .find(|style| style.id == speaker_id)
             .map(|style| (speaker.name.as_str(), style.name.as_str()))
-        ).with_context(|| format!("Speaker ID {} not found", speaker_id))?;
+        ).with_context(|| format!("スタイルID {} が見つかりません", speaker_id))?;
 
     println!(
         "{}. {} ({})",
@@ -71,12 +70,10 @@ fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
         speaker_and_style.1,
     );
 
-    if client.is_initialized_speaker(speaker_id)? {
-        println!("Speaker is ready!");
-    } else {
-        println!("Initializing speaker...");
+    if !client.is_initialized_speaker(speaker_id)? {
+        println!("スタイルを初期化中...");
         client.initialize_speaker(speaker_id)?;
-        println!("Speaker initialized successfully!");
+        println!("スタイルの初期化が完了しました！");
     }
 
     generate_voice_files(&client, speaker_id)?;
@@ -85,7 +82,7 @@ fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
 }
 
 fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> {
-    println!("Generating queries...");
+    println!("クエリを生成中...");
 
     let mut queries: HashMap<u32, HashMap<u32, String>> = HashMap::new();
 
@@ -104,12 +101,12 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
         queries.insert(hour, minute_queries);
     }
 
-    println!("Generated {} queries in total", queries.len() * 4);
+    println!("計 {} 個のクエリを生成しました", queries.len() * 4);
 
     std::fs::create_dir_all("voice_files")?;
 
     for hour in 0..24 {
-        println!("Generating audio files for {}時...", hour);
+        print!("{}時の音声ファイルを生成中... ", hour);
 
         let hour_queries = queries.get(&hour).unwrap();
         let query_vec: Vec<String> = [0, 15, 30, 45]
@@ -133,9 +130,11 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
                 }
             }
         }
+
+        println!("完了");
     }
 
-    println!("All voice files generated and saved successfully!");
+    println!("すべての音声ファイルが正常に生成・保存されました！");
 
     Ok(())
 }
@@ -143,13 +142,13 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
 fn handle_run(cron_spec: &str) -> Result<()> {
     let mut cron = Cron::new(Local);
     // https://github.com/tuyentv96/rust-crontab?tab=readme-ov-file#-cron-expression-format
-    // ┌───────────── second (0 - 59)
-    // │ ┌─────────── minute (0 - 59)
-    // │ │ ┌───────── hour (0 - 23)
-    // │ │ │ ┌─────── day of month (1 - 31)
-    // │ │ │ │ ┌───── month (1 - 12)
-    // │ │ │ │ │ ┌─── day of week (0 - 6) (Sunday to Saturday)
-    // │ │ │ │ │ │ ┌─ year (1970 - 3000)
+    // ┌───────────── 秒 (0 - 59)
+    // │ ┌─────────── 分 (0 - 59)
+    // │ │ ┌───────── 時 (0 - 23)
+    // │ │ │ ┌─────── 日 (1 - 31)
+    // │ │ │ │ ┌───── 月 (1 - 12)
+    // │ │ │ │ │ ┌─── 曜日 (0 - 6) (日曜日から土曜日)
+    // │ │ │ │ │ │ ┌─ 年 (1970 - 3000)
     // │ │ │ │ │ │ │
     // * * * * * * *
     cron.add_fn(cron_spec, || {
@@ -159,7 +158,7 @@ fn handle_run(cron_spec: &str) -> Result<()> {
 
         let filename = format!("voice_files/{:02}-{:02}.wav", hour, minute);
         let file = File::open(&filename)
-            .expect(&format!("Failed to open {}", filename));
+            .expect(&format!("ファイル {} を開けませんでした", filename));
 
         let mut handle = rodio::OutputStreamBuilder::open_default_stream().unwrap();
         handle.log_on_drop(false);
@@ -168,7 +167,7 @@ fn handle_run(cron_spec: &str) -> Result<()> {
     })?;
 
     cron.start();
-    println!("Cron job started!");
+    println!("cronスケジューラを開始しました！");
     loop {
         sleep(Duration::from_secs(3600));
     }

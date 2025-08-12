@@ -37,10 +37,10 @@ impl VoicevoxClient {
             .client
             .get(req_url)
             .send()
-            .with_context(|| format!("Failed to request VOICEVOX endpoint: {}", endpoint))?;
+            .with_context(|| format!("VOICEVOXエンドポイントへのリクエストに失敗しました: {}", endpoint))?;
 
         if !response.status().is_success() {
-            bail!("Request to VOICEVOX failed with status: {}", response.status());
+            bail!("VOICEVOXへのリクエストがステータス {} で失敗しました", response.status());
         }
 
         Ok(response.json()?)
@@ -52,10 +52,10 @@ impl VoicevoxClient {
             .client
             .post(req_url)
             .send()
-            .with_context(|| format!("Failed to request VOICEVOX endpoint: {}", endpoint))?;
+            .with_context(|| format!("VOICEVOXエンドポイントへのリクエストに失敗しました: {}", endpoint))?;
 
         if !response.status().is_success() {
-            bail!("Request to VOICEVOX failed with status: {}", response.status());
+            bail!("VOICEVOXへのリクエストがステータス {} で失敗しました", response.status());
         }
 
         Ok(())
@@ -73,7 +73,7 @@ impl VoicevoxClient {
             println!("VOICEVOX: {}", current_version);
         } else {
             eprintln!(
-                "VOICEVOX {} does not satisfy the required version: {}",
+                "警告: VOICEVOX {} は必要なバージョン {} を満たしていません",
                 current_version,
                 required_version
             );
@@ -109,10 +109,10 @@ impl VoicevoxClient {
             .client
             .post(req_url)
             .send()
-            .with_context(|| "Failed to request VOICEVOX audio_query endpoint")?;
+            .with_context(|| "VOICEVOXエンドポイントへのリクエストに失敗しました")?;
 
         if !response.status().is_success() {
-            bail!("audio_query request failed with status: {}", response.status());
+            bail!("リクエストがステータス {} で失敗しました", response.status());
         }
 
         let res = response.text()?;
@@ -132,7 +132,7 @@ impl VoicevoxClient {
             .iter()
             .map(|q| serde_json::from_str(q))
             .collect::<Result<Vec<_>, _>>()
-            .context("Failed to parse audio queries as JSON")?;
+            .context("音声クエリを解析できませんでした")?;
 
         let response = self
             .client
@@ -140,10 +140,10 @@ impl VoicevoxClient {
             .header("Content-Type", "application/json")
             .json(&queries_json)
             .send()
-            .with_context(|| "Failed to request VOICEVOX multi_synthesis endpoint")?;
+            .with_context(|| "VOICEVOXエンドポイントへのリクエストに失敗しました")?;
 
         if !response.status().is_success() {
-            bail!("multi_synthesis request failed with status: {}", response.status());
+            bail!("リクエストがステータス {} で失敗しました", response.status());
         }
 
         Ok(response.bytes()?.to_vec())
