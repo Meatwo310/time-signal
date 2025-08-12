@@ -128,10 +128,7 @@ time-signal.exe run --interval 10
 
 
 ## ライセンス
-
-このプロジェクトは、**[Apache License 2.0](LICENSE-APACHE)** と **[MIT License](LICENSE-MIT)** の [デュアルライセンス](LICENSE) です。
-
-サードパーティライブラリのライセンスについては、[LICENSES.html](LICENSES.html) をご参照ください。
+このプロジェクトは、**[Apache License 2.0](LICENSE-APACHE)** と **[MIT License](LICENSE-MIT)** の [デュアルライセンス](LICENSE) です。サードパーティライブラリのライセンスについては、[LICENSES.html](LICENSES.html) をご参照ください。
 
 
 ## VOICEVOX について
