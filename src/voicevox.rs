@@ -111,4 +111,13 @@ impl VoicevoxClient {
         let response = self.send_request(request, "multi_synthesis")?;
         Ok(response.bytes()?.to_vec())
     }
+
+    pub fn find_speaker_and_style<'a>(&self, speaker_id: u32, speakers: &'a Vec<Speaker>) -> Result<(&'a Speaker, &'a Style)> {
+        speakers.iter()
+            .find_map(|speaker| speaker.styles.iter()
+                .find(|style| style.id == speaker_id)
+                .map(|style| (speaker, style))
+            )
+            .with_context(|| format!("スタイルID {speaker_id} が見つかりません"))
+    }
 }

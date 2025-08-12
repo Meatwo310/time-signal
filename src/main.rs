@@ -84,17 +84,13 @@ fn handle_gen(speaker_id: Option<u32>, url: String, interval: u8) -> Result<()> 
     }
 
     let speaker_id = speaker_id.context("ここでスタイルIDが提供されるべきです")?;
-    let speaker_and_style = speakers.iter()
-        .find_map(|speaker| speaker.styles.iter()
-            .find(|style| style.id == speaker_id)
-            .map(|style| (&speaker.name, &style.name))
-        ).with_context(|| format!("スタイルID {speaker_id} が見つかりません"))?;
+    let (speaker, style) = client.find_speaker_and_style(speaker_id, &speakers)?;
 
     println!(
         "{}. {} ({})",
-        speaker_id,
-        speaker_and_style.0,
-        speaker_and_style.1,
+        style.id,
+        speaker.name,
+        style.name,
     );
 
     if !client.is_initialized_speaker(speaker_id)? {
