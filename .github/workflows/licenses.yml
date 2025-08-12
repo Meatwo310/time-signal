@@ -14,6 +14,9 @@ permissions:
 jobs:
   generate-and-commit:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -eo pipefail {0}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
