@@ -7,19 +7,29 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  BINARY_NAME: time-signal
 
 jobs:
   build:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-      fail-fast: false
+#      fail-fast: false
 
     runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --release --verbose
+
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --release --verbose
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.BINARY_NAME }}-${{ matrix.os }}
+        path: |
+          target/release/${{ env.BINARY_NAME }}${{ runner.os == 'Windows' && '.exe' || '' }}
