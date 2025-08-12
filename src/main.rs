@@ -217,7 +217,7 @@ fn handle_run(interval: u8) -> Result<()> {
     // │ │ │ │ │ │ ┌─ 年 (1970 - 3000)
     // │ │ │ │ │ │ │
     // * * * * * * *
-    cron.add_fn(&cron_spec, || {
+    cron.add_fn(&cron_spec, move || {
         let now = Local::now();
         let hour = now.hour();
         let minute = (now.minute() as u8) / interval * interval;
