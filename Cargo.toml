@@ -2,6 +2,7 @@
 name = "time-signal"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85.1"
 
 [dependencies]
 cron_tab = { version = "0.2", features = ["sync"] }
