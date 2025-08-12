@@ -63,7 +63,7 @@ impl VoicevoxClient {
 
     pub fn check_version(&self) -> Result<()> {
         let required = VersionReq::parse(">=0.24.0")?;
-        let current = Version::parse(self.get_version()?.as_str())?;
+        let current = Version::parse(&self.get_version()?)?;
 
         if required.matches(&current) {
             println!("VOICEVOX: {current}");

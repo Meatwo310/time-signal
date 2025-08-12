@@ -60,7 +60,7 @@ fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
     let speaker_and_style = speakers.iter()
         .find_map(|speaker| speaker.styles.iter()
             .find(|style| style.id == speaker_id)
-            .map(|style| (speaker.name.as_str(), style.name.as_str()))
+            .map(|style| (&speaker.name, &style.name))
         ).with_context(|| format!("スタイルID {speaker_id} が見つかりません"))?;
 
     println!(
@@ -177,7 +177,7 @@ fn main() -> Result<()> {
     let args = Cli::parse();
     match args.command.unwrap_or(Commands::Run {cron_spec: "0 */15 * * * *".to_string()}) {
         Commands::Gen { speaker_id, url } => handle_gen(speaker_id, url)?,
-        Commands::Run { cron_spec } => handle_run(cron_spec.as_str())?,
+        Commands::Run { cron_spec } => handle_run(&cron_spec)?,
     }
     Ok(())
 }
