@@ -1,6 +1,6 @@
 # Time Signal
 
-[![Test and Build](https://github.com/Meatwo310/time-signal/actions/workflows/rust.yml/badge.svg)](https://github.com/Meatwo310/time-signal/actions/workflows/rust.yml)
+[![License](https://img.shields.io/badge/License-Apache_2.0_OR_MIT-blue.svg)](LICENSE) [![Test and Build](https://github.com/Meatwo310/time-signal/actions/workflows/rust.yml/badge.svg)](https://github.com/Meatwo310/time-signal/actions/workflows/rust.yml)
 
 ## WIP
 このプロジェクトは現在開発中です
@@ -128,7 +128,10 @@ time-signal.exe run --interval 10
 
 
 ## ライセンス
-このプロジェクトは[MITライセンス](LICENSE)の下で公開されています。
+
+このプロジェクトは、**[Apache License 2.0](LICENSE-APACHE)** と **[MIT License](LICENSE-MIT)** の [デュアルライセンス](LICENSE) です。
+
+サードパーティライブラリのライセンスについては、[LICENSES.html](LICENSES.html) をご参照ください。
 
 
 ## VOICEVOX について

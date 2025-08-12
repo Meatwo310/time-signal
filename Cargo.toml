@@ -3,6 +3,7 @@ name = "time-signal"
 version = "0.1.1"
 edition = "2024"
 rust-version = "1.85.1"
+license = "Apache-2.0 OR MIT"
 
 [dependencies]
 cron_tab = { version = "0.2", features = ["sync"] }
