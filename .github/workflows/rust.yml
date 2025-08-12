@@ -8,6 +8,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   BINARY_NAME: time-signal
+  BINARY_DIR: .tmp
 
 jobs:
   build:
@@ -43,23 +44,22 @@ jobs:
     - name: Build
       run: cargo build --release --verbose
 
-    - name: Rename binary for release
-      shell: bash
+    - name: Prepare binary
       run: |
-        os_name=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-        binary_path="target/release/${{ env.BINARY_NAME }}"
-        
-        if [[ "${{ runner.os }}" == "Windows" ]]; then
-          mv "${binary_path}.exe" "${binary_path}-${os_name}.exe"
-        else
-          mv "${binary_path}" "${binary_path}-${os_name}"
-        fi
+        mkdir -p ${{ env.BINARY_DIR }}
+        cp target/release/${{ env.BINARY_NAME }} ${{ env.BINARY_DIR }}
+
+    - name: Rename MacOS binary to prevent conflicts
+      if: matrix.os == 'macos-latest'
+      run: |
+        cd ${{ env.BINARY_DIR }}
+        mv ${{ env.BINARY_NAME }} ${{ env.BINARY_NAME }}-macos
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.BINARY_NAME }}-${{ matrix.os }}
-        path: target/release/${{ env.BINARY_NAME }}-*
+        path: ${{ env.BINARY_DIR }}/*
 
   release:
     name: Publish binaries to GitHub Releases
