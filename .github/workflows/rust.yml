@@ -44,23 +44,28 @@ jobs:
     - name: Build
       run: cargo build --release --verbose
 
-    - name: Prepare binary
+    - name: Prepare binary for upload
+      id: prepare_binary
       shell: bash
       run: |
-        mkdir -p ${{ env.BINARY_DIR }}
-        cp target/release/${{ env.BINARY_NAME }}${{ runner.os == 'Windows' && '.exe' || '' }} ${{ env.BINARY_DIR }}
-
-    - name: Rename MacOS binary to prevent conflicts
-      if: matrix.os == 'macos-latest'
-      run: |
-        cd ${{ env.BINARY_DIR }}
-        mv ${{ env.BINARY_NAME }} ${{ env.BINARY_NAME }}-macos
+        if [[ "${{ runner.os }}" == "macOS" ]]; then
+          # macOSの場合、バイナリ名に "-macos" を追加してリネーム
+          NEW_NAME="${{ env.BINARY_NAME }}-macos"
+          mv "target/release/${{ env.BINARY_NAME }}" "target/release/${NEW_NAME}"
+          echo "path=target/release/${NEW_NAME}" >> $GITHUB_OUTPUT
+        elif [[ "${{ runner.os }}" == "Windows" ]]; then
+          # Windowsの場合は .exe 拡張子を付けたパスを設定
+          echo "path=target/release/${{ env.BINARY_NAME }}.exe" >> $GITHUB_OUTPUT
+        else
+          # Linuxの場合は元のバイナリ名のパスを設定
+          echo "path=target/release/${{ env.BINARY_NAME }}" >> $GITHUB_OUTPUT
+        fi
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.BINARY_NAME }}-${{ matrix.os }}
-        path: ${{ env.BINARY_DIR }}/*
+        path: ${{ steps.prepare_binary.outputs.path }}
 
   release:
     name: Publish binaries to GitHub Releases
