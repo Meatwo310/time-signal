@@ -183,13 +183,17 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32, interval: u8) 
 
 fn check_voice_files(interval: u8) -> Result<()> {
     let voice_files = Path::new("voice_files");
-    let pattern = Regex::new(r"\d\d-\d\d\.wav")?;
+    let pattern = Regex::new(r"^([01]\d|2[0-3])-([0-5]\d)\.wav$")?;
 
     let expected_file_count = 24 * (60 / interval as usize);
-    let file_count = voice_files.read_dir()?
-        .filter_map(|e| e.ok())
-        .filter(|e| pattern.is_match(e.file_name().to_str().unwrap()))
-        .count();
+    let file_count = match voice_files.read_dir() {
+        Ok(entries) => entries
+            .filter_map(|e| e.ok())
+            .filter_map(|e| e.file_name().to_str().map(String::from))
+            .filter(|name| pattern.is_match(name))
+            .count(),
+        Err(_) => 0,
+    };
 
     if !voice_files.exists() || !voice_files.is_dir() || file_count == 0 {
         println!("警告: 音声ファイルが存在しません。事前にgenコマンドを実行して音声ファイルを生成してください。");
