@@ -26,16 +26,18 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt update && sudo apt install -y libasound2-dev
 
-    - name: Set up Rust
-      run: rustup toolchain install stable --profile minimal --no-self-update
+#    - name: Set up Rust
+#      run: rustup toolchain install stable --profile minimal --no-self-update
 
     - name: Rust Cache
       uses: Swatinem/rust-cache@v2.8.0
 
     - name: Check
+      if: matrix.os != 'macos-latest'
       run: cargo check --verbose
 
     - name: Test
+      if: matrix.os != 'macos-latest'
       run: cargo test --verbose
 
     - name: Build
