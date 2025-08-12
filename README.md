@@ -1,5 +1,7 @@
 # Time Signal
 
+[![Test and Build](https://github.com/Meatwo310/time-signal/actions/workflows/rust.yml/badge.svg)](https://github.com/Meatwo310/time-signal/actions/workflows/rust.yml)
+
 ## WIP
 このプロジェクトは現在開発中です
 
