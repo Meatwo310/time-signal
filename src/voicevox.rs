@@ -28,36 +28,32 @@ impl VoicevoxClient {
         }
     }
 
+    fn send_request(&self, request: reqwest::blocking::RequestBuilder, endpoint: &str) -> Result<reqwest::blocking::Response> {
+        let response = request
+            .send()
+            .with_context(|| format!("VOICEVOXエンドポイントへのリクエストに失敗しました: {}", endpoint))?;
+
+        if !response.status().is_success() {
+            bail!("VOICEVOXへのリクエストがステータス {} で失敗しました", response.status());
+        }
+
+        Ok(response)
+    }
+
     fn get<T>(&self, endpoint: &str) -> Result<T>
     where
         T: for<'de> Deserialize<'de>,
     {
         let req_url = self.base_url.join(endpoint)?;
-        let response = self
-            .client
-            .get(req_url)
-            .send()
-            .with_context(|| format!("VOICEVOXエンドポイントへのリクエストに失敗しました: {}", endpoint))?;
-
-        if !response.status().is_success() {
-            bail!("VOICEVOXへのリクエストがステータス {} で失敗しました", response.status());
-        }
-
+        let request = self.client.get(req_url);
+        let response = self.send_request(request, endpoint)?;
         Ok(response.json()?)
     }
 
     fn post(&self, endpoint: &str) -> Result<()> {
         let req_url = self.base_url.join(endpoint)?;
-        let response = self
-            .client
-            .post(req_url)
-            .send()
-            .with_context(|| format!("VOICEVOXエンドポイントへのリクエストに失敗しました: {}", endpoint))?;
-
-        if !response.status().is_success() {
-            bail!("VOICEVOXへのリクエストがステータス {} で失敗しました", response.status());
-        }
-
+        let request = self.client.post(req_url);
+        self.send_request(request, endpoint)?;
         Ok(())
     }
 
@@ -105,18 +101,9 @@ impl VoicevoxClient {
             query_pairs.append_pair("speaker", &speaker_id.to_string());
         }
 
-        let response = self
-            .client
-            .post(req_url)
-            .send()
-            .with_context(|| "VOICEVOXエンドポイントへのリクエストに失敗しました")?;
-
-        if !response.status().is_success() {
-            bail!("リクエストがステータス {} で失敗しました", response.status());
-        }
-
-        let res = response.text()?;
-        Ok(res)
+        let request = self.client.post(req_url);
+        let response = self.send_request(request, "audio_query")?;
+        Ok(response.text()?)
     }
 
     pub fn multi_synthesis(&self, queries: &[String], speaker_id: u32) -> Result<Vec<u8>> {
@@ -134,18 +121,12 @@ impl VoicevoxClient {
             .collect::<Result<Vec<_>, _>>()
             .context("音声クエリを解析できませんでした")?;
 
-        let response = self
-            .client
+        let request = self.client
             .post(req_url)
             .header("Content-Type", "application/json")
-            .json(&queries_json)
-            .send()
-            .with_context(|| "VOICEVOXエンドポイントへのリクエストに失敗しました")?;
+            .json(&queries_json);
 
-        if !response.status().is_success() {
-            bail!("リクエストがステータス {} で失敗しました", response.status());
-        }
-
+        let response = self.send_request(request, "multi_synthesis")?;
         Ok(response.bytes()?.to_vec())
     }
 }
