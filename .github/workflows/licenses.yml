@@ -1,6 +1,6 @@
 # .github/workflows/generate-licenses.yml
 
-name: 'Generate and Push LICENSES.html'
+name: 'Update LICENSES.html'
 
 on:
   push:
