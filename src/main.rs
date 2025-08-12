@@ -9,7 +9,7 @@ use indicatif::{ProgressBar, ProgressFinish, ProgressStyle};
 use semver::{Version, VersionReq};
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{Cursor, Read};
+use std::io::{stdout, Cursor, Read, Write};
 use std::thread::sleep;
 use std::time::Duration;
 use url::Url;
@@ -82,9 +82,10 @@ fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
     );
 
     if !client.is_initialized_speaker(speaker_id)? {
-        println!("スタイルを初期化中...");
+        print!("スタイルを初期化中... ");
+        stdout().flush()?;
         client.initialize_speaker(speaker_id)?;
-        println!("スタイルの初期化が完了しました！");
+        println!("完了");
     }
 
     generate_voice_files(&client, speaker_id)?;
