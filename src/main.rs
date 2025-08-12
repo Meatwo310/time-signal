@@ -61,7 +61,7 @@ fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
         .find_map(|speaker| speaker.styles.iter()
             .find(|style| style.id == speaker_id)
             .map(|style| (speaker.name.as_str(), style.name.as_str()))
-        ).with_context(|| format!("スタイルID {} が見つかりません", speaker_id))?;
+        ).with_context(|| format!("スタイルID {speaker_id} が見つかりません"))?;
 
     println!(
         "{}. {} ({})",
@@ -91,9 +91,9 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
         for minute in [0, 15, 30, 45] {
             let hour_text = if hour == 0 { "零" } else { &hour.to_string() };
             let text = if minute == 0 {
-                format!("{}時です", hour_text)
+                format!("{hour_text}時です")
             } else {
-                format!("{}時{}分です", hour_text, minute)
+                format!("{hour_text}時{minute}分です")
             };
             let query = client.audio_query(&text, speaker_id)?;
             minute_queries.insert(minute, query);
@@ -106,7 +106,7 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
     std::fs::create_dir_all("voice_files")?;
 
     for hour in 0..24 {
-        print!("{}時の音声ファイルを生成中... ", hour);
+        print!("{hour}時の音声ファイルを生成中... ");
 
         let hour_queries = queries.get(&hour).unwrap();
         let query_vec: Vec<String> = [0, 15, 30, 45]
@@ -158,7 +158,7 @@ fn handle_run(cron_spec: &str) -> Result<()> {
 
         let filename = format!("voice_files/{:02}-{:02}.wav", hour, minute);
         let file = File::open(&filename)
-            .expect(&format!("ファイル {} を開けませんでした", filename));
+            .expect(&format!("ファイル {filename} を開けませんでした"));
 
         let mut handle = rodio::OutputStreamBuilder::open_default_stream().unwrap();
         handle.log_on_drop(false);

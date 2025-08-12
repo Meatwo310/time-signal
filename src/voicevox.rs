@@ -31,7 +31,7 @@ impl VoicevoxClient {
     fn send_request(&self, request: reqwest::blocking::RequestBuilder, endpoint: &str) -> Result<reqwest::blocking::Response> {
         let response = request
             .send()
-            .with_context(|| format!("VOICEVOXエンドポイントへのリクエストに失敗しました: {}", endpoint))?;
+            .with_context(|| format!("VOICEVOXエンドポイントへのリクエストに失敗しました: {endpoint}"))?;
 
         if !response.status().is_success() {
             bail!("VOICEVOXへのリクエストがステータス {} で失敗しました", response.status());
@@ -62,16 +62,14 @@ impl VoicevoxClient {
     }
 
     pub fn check_version(&self) -> Result<()> {
-        let required_version = VersionReq::parse(">=0.24.0")?;
-        let current_version = Version::parse(self.get_version()?.as_str())?;
+        let required = VersionReq::parse(">=0.24.0")?;
+        let current = Version::parse(self.get_version()?.as_str())?;
 
-        if required_version.matches(&current_version) {
-            println!("VOICEVOX: {}", current_version);
+        if required.matches(&current) {
+            println!("VOICEVOX: {current}");
         } else {
             println!(
-                "警告: VOICEVOX {} は必要なバージョン {} を満たしていません",
-                current_version,
-                required_version
+                "警告: VOICEVOX {current} は必要なバージョン {required} を満たしていません",
             );
         }
 
@@ -83,12 +81,12 @@ impl VoicevoxClient {
     }
 
     pub fn is_initialized_speaker(&self, speaker_id: u32) -> Result<bool> {
-        let endpoint = format!("is_initialized_speaker?speaker={}", speaker_id);
+        let endpoint = format!("is_initialized_speaker?speaker={speaker_id}");
         self.get(&endpoint)
     }
 
     pub fn initialize_speaker(&self, speaker_id: u32) -> Result<()> {
-        let endpoint = format!("initialize_speaker?speaker={}&skip_reinit=true", speaker_id);
+        let endpoint = format!("initialize_speaker?speaker={speaker_id}&skip_reinit=true");
         self.post(&endpoint)
     }
 
