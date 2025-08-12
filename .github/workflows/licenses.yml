@@ -1,0 +1,30 @@
+# .github/workflows/generate-licenses.yml
+
+name: 'Generate and Push LICENSES.html'
+
+on:
+  push:
+    paths:
+      - 'Cargo.lock'
+
+permissions:
+  contents: write
+
+jobs:
+  generate-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install cargo-about
+        run: cargo install cargo-about
+
+      - name: Generate LICENSES.html
+        run: cargo about about.hbs > LICENSES.html
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v6
+        with:
+          commit_message: "chore: Update LICENSES.html"
+          file_pattern: LICENSES.html
