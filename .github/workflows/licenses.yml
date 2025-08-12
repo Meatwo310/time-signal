@@ -28,7 +28,7 @@ jobs:
         run: cargo install cargo-about
 
       - name: Generate LICENSES.html
-        run: cargo about generate about.hbs | tee LICENSES.html
+        run: cargo about generate about.hbs > LICENSES.html
 
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v6
