@@ -32,7 +32,7 @@ jobs:
     - name : Check
       run: cargo check --verbose
 
-    - name: Tests
+    - name: Test
       run: cargo test --verbose
 
     - name: Build
