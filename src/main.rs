@@ -5,9 +5,10 @@ use anyhow::{Context, Result};
 use chrono::{Local, Timelike};
 use clap::{Parser, Subcommand};
 use cron_tab::Cron;
+use semver::{Version, VersionReq};
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{Cursor, Read};
+use std::io::{stdout, Cursor, Read, Write};
 use std::thread::sleep;
 use std::time::Duration;
 use url::Url;
@@ -41,7 +42,16 @@ fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
         .context("VOICEVOXサーバーのURLが不正です")?
     );
 
-    client.check_version()?;
+    let required = VersionReq::parse(">=0.24.0")?;
+    let current = Version::parse(&client.get_version()?)?;
+
+    if required.matches(&current) {
+        println!("VOICEVOX: {current}");
+    } else {
+        println!(
+            "警告: VOICEVOX {current} は必要なバージョン {required} を満たしていません",
+        );
+    }
 
     let speakers = client.list_speakers()?;
 
@@ -82,7 +92,8 @@ fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
 }
 
 fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> {
-    println!("クエリを生成中...");
+    print!("クエリを生成\t[{}]\x1b[25D", ".".repeat(24));
+    stdout().flush()?;
 
     let mut queries: HashMap<u32, HashMap<u32, String>> = HashMap::new();
 
@@ -99,15 +110,19 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
             minute_queries.insert(minute, query);
         }
         queries.insert(hour, minute_queries);
+
+        print!("#");
+        stdout().flush()?;
     }
 
-    println!("計 {} 個のクエリを生成しました", queries.len() * 4);
+    println!();
 
     std::fs::create_dir_all("voice_files")?;
 
-    for hour in 0..24 {
-        print!("{hour}時の音声ファイルを生成中... ");
+    print!("音声を生成\t[{}]\x1b[25D", ".".repeat(24));
+    stdout().flush()?;
 
+    for hour in 0..24 {
         let hour_queries = queries.get(&hour).unwrap();
         let query_vec: Vec<String> = [0, 15, 30, 45]
             .iter()
@@ -131,10 +146,11 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
             }
         }
 
-        println!("完了");
+        print!("#");
+        stdout().flush()?;
     }
 
-    println!("すべての音声ファイルが正常に生成・保存されました！");
+    println!("\nすべての音声ファイルが正常に生成・保存されました！");
 
     Ok(())
 }

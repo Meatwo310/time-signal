@@ -1,6 +1,5 @@
 use anyhow::{bail, Context, Result};
 use reqwest::Url;
-use semver::{Version, VersionReq};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -59,21 +58,6 @@ impl VoicevoxClient {
 
     pub fn get_version(&self) -> Result<String> {
         self.get("version")
-    }
-
-    pub fn check_version(&self) -> Result<()> {
-        let required = VersionReq::parse(">=0.24.0")?;
-        let current = Version::parse(&self.get_version()?)?;
-
-        if required.matches(&current) {
-            println!("VOICEVOX: {current}");
-        } else {
-            println!(
-                "警告: VOICEVOX {current} は必要なバージョン {required} を満たしていません",
-            );
-        }
-
-        Ok(())
     }
 
     pub fn list_speakers(&self) -> Result<Vec<Speaker>> {
