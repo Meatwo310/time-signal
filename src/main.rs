@@ -31,6 +31,9 @@ enum Commands {
         url: String,
     },
     Run {
+        /// The cron expression to run the voice generation.
+        #[arg(short, long, default_value = "0 */15 * * * *")]
+        cron_spec: String,
     }
 }
 
@@ -137,7 +140,7 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
     Ok(())
 }
 
-fn handle_run() -> Result<()> {
+fn handle_run(cron_spec: &str) -> Result<()> {
     let mut cron = Cron::new(Local);
     // https://github.com/tuyentv96/rust-crontab?tab=readme-ov-file#-cron-expression-format
     // ┌───────────── second (0 - 59)
@@ -149,8 +152,7 @@ fn handle_run() -> Result<()> {
     // │ │ │ │ │ │ ┌─ year (1970 - 3000)
     // │ │ │ │ │ │ │
     // * * * * * * *
-    cron.add_fn("0 */15 * * * * *", || {
-    // cron.add_fn("*/10 * * * * * *", || {
+    cron.add_fn(cron_spec, || {
         let now = Local::now();
         let hour = now.hour();
         let minute = now.minute() / 15 * 15;
@@ -174,9 +176,9 @@ fn handle_run() -> Result<()> {
 
 fn main() -> Result<()> {
     let args = Cli::parse();
-    match args.command.unwrap_or(Commands::Run {}) {
+    match args.command.unwrap_or(Commands::Run {cron_spec: "0 */15 * * * *".to_string()}) {
         Commands::Gen { speaker_id, url } => handle_gen(speaker_id, url)?,
-        Commands::Run { .. } => handle_run()?,
+        Commands::Run { cron_spec } => handle_run(cron_spec.as_str())?,
     }
     Ok(())
 }
