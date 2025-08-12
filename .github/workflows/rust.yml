@@ -43,12 +43,23 @@ jobs:
     - name: Build
       run: cargo build --release --verbose
 
+    - name: Rename binary for release
+      shell: bash
+      run: |
+        os_name=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+        binary_path="target/release/${{ env.BINARY_NAME }}"
+        
+        if [[ "${{ runner.os }}" == "Windows" ]]; then
+          mv "${binary_path}.exe" "${binary_path}-${os_name}.exe"
+        else
+          mv "${binary_path}" "${binary_path}-${os_name}"
+        fi
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.BINARY_NAME }}-${{ matrix.os }}
-        path: |
-          target/release/${{ env.BINARY_NAME }}${{ runner.os == 'Windows' && '.exe' || '' }}
+        path: target/release/${{ env.BINARY_NAME }}-*
 
   release:
     name: Publish binaries to GitHub Releases
