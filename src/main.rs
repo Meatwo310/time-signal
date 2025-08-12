@@ -33,14 +33,28 @@ enum Commands {
         /// VOICEVOXサーバーのURL
         #[arg(short, long, default_value = "http://127.0.0.1:50021/")]
         url: String,
+
+        /// 時報の間隔。15分を指定すると、毎時0分、15分、30分、45分に音声が生成されます。
+        #[arg(short, long, default_value = "15")]
+        interval: u8,
     },
     Run {
-        #[arg(short, long, default_value = "0 */15 * * * *")]
-        cron_spec: String,
+        /// 時報の間隔。15分を指定すると、毎時0分、15分、30分、45分に音声が再生されます。
+        #[arg(short, long, default_value = "15")]
+        interval: u8,
     }
 }
 
-fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
+fn validate_interval(interval: u8) -> Result<()> {
+    if interval == 0 || interval > 60 {
+        anyhow::bail!("intervalは1から60の間で指定してください。指定された値: {interval}");
+    }
+    Ok(())
+}
+
+fn handle_gen(speaker_id: Option<u32>, url: String, interval: u8) -> Result<()> {
+    validate_interval(interval)?;
+
     let client = VoicevoxClient::new(Url::parse(&url)
         .context("VOICEVOXサーバーのURLが不正です")?
     );
@@ -90,7 +104,7 @@ fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
         println!("完了");
     }
 
-    generate_voice_files(&client, speaker_id)?;
+    generate_voice_files(&client, speaker_id, interval)?;
 
     Ok(())
 }
@@ -106,14 +120,17 @@ fn create_progress_bar(length: u64, message: &str) -> Result<ProgressBar> {
     Ok(bar)
 }
 
-fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> {
+fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32, interval: u8) -> Result<()> {
     let mut queries: HashMap<u32, HashMap<u32, String>> = HashMap::new();
 
-    let bar = create_progress_bar(24 * 4, "クエリを生成")?;
+    let minutes_per_hour: Vec<u32> = (0..60).step_by(interval as usize).collect(); // [0, 15, 30, 45]
+    let total_queries = (24 * minutes_per_hour.len()) as u64;
+
+    let bar = create_progress_bar(total_queries, "クエリを生成")?;
 
     for hour in 0..24 {
         let mut minute_queries: HashMap<u32, String> = HashMap::new();
-        for minute in [0, 15, 30, 45] {
+        for &minute in &minutes_per_hour {
             let hour_text = if hour == 0 { "零" } else { &hour.to_string() };
             let text = if minute == 0 {
                 format!("{hour_text}時です")
@@ -131,11 +148,11 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
 
     std::fs::create_dir_all("voice_files")?;
 
-    let bar = create_progress_bar(24 * 4, "ボイスを生成")?;
+    let bar = create_progress_bar(total_queries, "ボイスを生成")?;
 
     for hour in 0..24 {
         let hour_queries = queries.get(&hour).unwrap();
-        let query_vec: Vec<String> = [0, 15, 30, 45]
+        let query_vec: Vec<String> = minutes_per_hour
             .iter()
             .map(|minute| hour_queries.get(minute).unwrap().clone())
             .collect();
@@ -144,8 +161,7 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
         let cursor = Cursor::new(zip_data);
         let mut archive = ZipArchive::new(cursor)?;
 
-        let minutes = [0, 15, 30, 45];
-        for (i, &minute) in minutes.iter().enumerate() {
+        for (i, &minute) in minutes_per_hour.iter().enumerate() {
             if i < archive.len() {
                 let mut file = archive.by_index(i)?;
                 if file.is_file() {
@@ -156,7 +172,7 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
                 }
             }
         }
-        bar.inc(4);
+        bar.inc(minutes_per_hour.len() as u64);
     }
 
     bar.finish();
@@ -165,16 +181,18 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
     Ok(())
 }
 
-fn check_voice_files() -> Result<()> {
+fn check_voice_files(interval: u8) -> Result<()> {
     let voice_files = Path::new("voice_files");
     let pattern = Regex::new(r"\d\d-\d\d\.wav")?;
+
+    let expected_file_count = 24 * (60 / interval as usize);
 
     if !voice_files.exists() || !voice_files.is_dir() {
         println!("警告: 音声ファイルが存在しません。事前に `gen` コマンドを実行して音声ファイルを生成してください。");
     } else if voice_files.read_dir()?
         .filter_map(|e| e.ok())
         .filter(|e| pattern.is_match(e.file_name().to_str().unwrap()))
-        .count() != 96
+        .count() != expected_file_count
     {
         println!("警告: 音声ファイルが不足しています。`gen` コマンドを実行してすべての音声ファイルを生成してください。");
     }
@@ -182,10 +200,12 @@ fn check_voice_files() -> Result<()> {
     Ok(())
 }
 
-fn handle_run(cron_spec: &str) -> Result<()> {
-    check_voice_files()?;
+fn handle_run(interval: u8) -> Result<()> {
+    validate_interval(interval)?;
+    check_voice_files(interval)?;
 
     let mut cron = Cron::new(Local);
+    let cron_spec = format!("0 */{interval} * * * *");
 
     // https://github.com/tuyentv96/rust-crontab?tab=readme-ov-file#-cron-expression-format
     // ┌───────────── 秒 (0 - 59)
@@ -197,10 +217,10 @@ fn handle_run(cron_spec: &str) -> Result<()> {
     // │ │ │ │ │ │ ┌─ 年 (1970 - 3000)
     // │ │ │ │ │ │ │
     // * * * * * * *
-    cron.add_fn(cron_spec, || {
+    cron.add_fn(&cron_spec, || {
         let now = Local::now();
         let hour = now.hour();
-        let minute = now.minute() / 15 * 15;
+        let minute = (now.minute() as u8) / interval * interval;
 
         println!("{:02}:{:02}です", hour, minute);
 
@@ -223,9 +243,9 @@ fn handle_run(cron_spec: &str) -> Result<()> {
 
 fn main() -> Result<()> {
     let args = Cli::parse();
-    match args.command.unwrap_or(Commands::Run {cron_spec: "0 */15 * * * *".to_string()}) {
-        Commands::Gen { speaker_id, url } => handle_gen(speaker_id, url)?,
-        Commands::Run { cron_spec } => handle_run(&cron_spec)?,
+    match args.command.unwrap_or(Commands::Run {interval: 15}) {
+        Commands::Gen { speaker_id, url, interval } => handle_gen(speaker_id, url, interval)?,
+        Commands::Run { interval } => handle_run(interval)?,
     }
     Ok(())
 }
