@@ -22,14 +22,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Rust
-      run: rustup toolchain install stable --profile minimal --no-self-update
-
     - name: Install dependencies
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt update && sudo apt install -y libasound2-dev
 
-    - name : Check
+    - name: Set up Rust
+      run: rustup toolchain install stable --profile minimal --no-self-update
+
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2.8.0
+
+    - name: Check
       run: cargo check --verbose
 
     - name: Test
