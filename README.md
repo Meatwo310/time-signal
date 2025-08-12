@@ -6,25 +6,33 @@
 このプロジェクトは現在開発中です
 
 TODO:
-- カスタマイズ性を何とかする
-- 自動ビルドを設定する
-- まともなドキュメントを書く(半分Claudeに書かせましたごめんなさい)
-  - 英語か日本語か統一する
+- [ ] カスタマイズ性を何とかする
+- [x] 自動ビルドを設定する
+- [ ] まともなドキュメントを書く(半分Claudeに書かせましたごめんなさい)
+  - [x] 英語か日本語か統一する
 
 
 ## 概要
 VOICEVOXを使用した音声時報システムです。15分おきに時報を自動で再生します。
 
 このプロジェクトは以下の2つの主要機能を提供します:
-1. **音声ファイル生成**: VOICEVOXの音声合成APIを使用して、24時間分(15分間隔)の時報音声ファイルを生成
-2. **自動時報**: 現在時刻に対応する時報を15分間隔で自動再生
+1. **音声ファイル生成**: VOICEVOXの音声合成APIを使用して、24時間分の時報音声ファイルを生成
+2. **時報システム**: 現在時刻に対応する時報を自動再生
 
 
 ## 必要な環境
-- Windowsマシン (他のOSでも動くとは思いますが未検証です)
-- Rust / Cargo
-- [VOICEVOX](https://github.com/VOICEVOX/voicevox) か [エンジン](https://github.com/VOICEVOX/voicevox_engine) (デフォルトで `http://127.0.0.1:50021/` へ接続します)
+- x64のWindows/Linuxマシン、またはarm64のmacOSマシン
+  - Windows以外は未検証です
+- Rust >=1.85.1 / Cargo
+- [VOICEVOX](https://github.com/VOICEVOX/voicevox) または [エンジン](https://github.com/VOICEVOX/voicevox_engine) (デフォルトで `http://127.0.0.1:50021/` へ接続します)
 
+
+## ダウンロード
+Windows / Linux / macOS(arm64) 向けのバイナリが [Releases](https://github.com/Meatwo310/time-signal/releases) に転がっています。
+環境が合わない場合は自前でビルドしてください。
+
+実行ファイルは単独で機能します。
+音声ファイルはカレントディレクトリ上の `voice_files/` ディレクトリに保存されますので、あんまり変な場所に置くと後で困ります。
 
 ## ビルド
 ```terminal
@@ -36,28 +44,31 @@ cargo build --release
 `./target/release/time-signal.exe`に実行ファイルが生成されます。
 
 
-## 使用方法
+## 使い方
 
 ```terminal
 Usage: time-signal.exe [COMMAND]
 
 Commands:
-  gen   
-  run   
+  gen   音声ファイルを事前生成します。VOICEVOXサーバーが必要です。
+  run   一定間隔で時報を再生します。音声ファイルを事前に生成する必要があります。
   help  Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help  Print help
 ```
 ```terminal
+音声ファイルを事前生成します。VOICEVOXサーバーが必要です。
+
 Usage: time-signal.exe gen [OPTIONS] [SPEAKER_ID]
 
 Arguments:
-  [SPEAKER_ID]  The speaker ID to use for the voice generation. Leave empty to list all speakers
+  [SPEAKER_ID]  音声生成に使用するスタイルID。 空の場合はすべてのスタイルを一覧表示します
 
 Options:
-  -u, --url <URL>  The URL of the VOICEVOX server [default: http://127.0.0.1:50021/]
-  -h, --help       Print help
+  -u, --url <URL>            VOICEVOXサーバーのURL [default: http://127.0.0.1:50021/]
+  -i, --interval <INTERVAL>  時報の間隔。15分を指定すると、毎時0分、15分、30分、45分に音声が生成されます。 [default: 15]
+  -h, --help                 Print help
 ```
 
 ### 1. 利用可能な話者の確認
@@ -84,16 +95,34 @@ time-signal.exe gen 2
 - ...
 
 > [!NOTE]
-> 音声ファイルの生成にはVOICEVOXまたはエンジンを起動しておく必要があります。
+> genコマンド実行中は、VOICEVOXまたはエンジンを起動しておく必要があります。
 
-### 3. 時報の実行
+### 3. 時報システムを開始
 ```terminal
 time-signal.exe
 ```
 このコマンドを実行している間、15分間隔(毎時0分、15分、30分、45分)で対応する時報が再生されます。
 
 > [!NOTE]
-> runモードは事前生成された音声ファイルを使用します。VOICEVOXは不要です。
+> runコマンドは事前生成された音声ファイルを使用します。VOICEVOXは不要です。
+
+### ヒント: 時報の間隔を調整するには
+`-i`/`--interval` オプションを使用して、時報の間隔を変更できます。
+
+例えば、30分ごとに時報を再生するには:
+```terminal
+time-signal.exe run --interval 30
+```
+
+10分ごとに時報を再生するには:
+```terminal
+time-signal.exe gen --interval 10 <speaker_id>
+time-signal.exe run --interval 10
+```
+
+> [!NOTE]
+> 時報の間隔を短くする際には、音声ファイルの再生成が必要です。
+> ファイルが不足している場合は、runコマンド実行時に警告が表示されます。
 
 
 ## ライセンス
