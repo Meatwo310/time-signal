@@ -18,11 +18,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.8.0
+
       - name: Install cargo-about
         run: cargo install cargo-about
 
       - name: Generate LICENSES.html
-        run: cargo about about.hbs > LICENSES.html
+        run: cargo about about.hbs | tee LICENSES.html
 
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v6
