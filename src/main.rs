@@ -6,10 +6,12 @@ use chrono::{Local, Timelike};
 use clap::{Parser, Subcommand};
 use cron_tab::Cron;
 use indicatif::{ProgressBar, ProgressFinish, ProgressStyle};
+use regex::Regex;
 use semver::{Version, VersionReq};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{stdout, Cursor, Read, Write};
+use std::path::Path;
 use std::thread::sleep;
 use std::time::Duration;
 use url::Url;
@@ -163,8 +165,28 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
     Ok(())
 }
 
+fn check_voice_files() -> Result<()> {
+    let voice_files = Path::new("voice_files");
+    let pattern = Regex::new(r"\d\d-\d\d\.wav")?;
+
+    if !voice_files.exists() || !voice_files.is_dir() {
+        println!("警告: 音声ファイルが存在しません。事前に `gen` コマンドを実行して音声ファイルを生成してください。");
+    } else if voice_files.read_dir()?
+        .filter_map(|e| e.ok())
+        .filter(|e| pattern.is_match(e.file_name().to_str().unwrap()))
+        .count() != 96
+    {
+        println!("警告: 音声ファイルが不足しています。`gen` コマンドを実行してすべての音声ファイルを生成してください。");
+    }
+
+    Ok(())
+}
+
 fn handle_run(cron_spec: &str) -> Result<()> {
+    check_voice_files()?;
+
     let mut cron = Cron::new(Local);
+
     // https://github.com/tuyentv96/rust-crontab?tab=readme-ov-file#-cron-expression-format
     // ┌───────────── 秒 (0 - 59)
     // │ ┌─────────── 分 (0 - 59)
@@ -179,6 +201,8 @@ fn handle_run(cron_spec: &str) -> Result<()> {
         let now = Local::now();
         let hour = now.hour();
         let minute = now.minute() / 15 * 15;
+
+        println!("{:02}:{:02}です", hour, minute);
 
         let filename = format!("voice_files/{:02}-{:02}.wav", hour, minute);
         let file = File::open(&filename)
