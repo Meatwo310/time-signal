@@ -68,7 +68,7 @@ impl VoicevoxClient {
         if required_version.matches(&current_version) {
             println!("VOICEVOX: {}", current_version);
         } else {
-            eprintln!(
+            println!(
                 "警告: VOICEVOX {} は必要なバージョン {} を満たしていません",
                 current_version,
                 required_version
