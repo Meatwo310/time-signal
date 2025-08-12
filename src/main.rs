@@ -186,15 +186,15 @@ fn check_voice_files(interval: u8) -> Result<()> {
     let pattern = Regex::new(r"\d\d-\d\d\.wav")?;
 
     let expected_file_count = 24 * (60 / interval as usize);
-
-    if !voice_files.exists() || !voice_files.is_dir() {
-        println!("警告: 音声ファイルが存在しません。事前に `gen` コマンドを実行して音声ファイルを生成してください。");
-    } else if voice_files.read_dir()?
+    let file_count = voice_files.read_dir()?
         .filter_map(|e| e.ok())
         .filter(|e| pattern.is_match(e.file_name().to_str().unwrap()))
-        .count() != expected_file_count
-    {
-        println!("警告: 音声ファイルが不足しています。`gen` コマンドを実行してすべての音声ファイルを生成してください。");
+        .count();
+
+    if !voice_files.exists() || !voice_files.is_dir() || file_count == 0 {
+        println!("警告: 音声ファイルが存在しません。事前にgenコマンドを実行して音声ファイルを生成してください。");
+    } else if file_count < expected_file_count {
+        println!("警告: 音声ファイルが不足しています。genコマンドを実行してすべての音声ファイルを生成してください。");
     }
 
     Ok(())
