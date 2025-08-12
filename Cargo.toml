@@ -7,18 +7,18 @@ license = "Apache-2.0 OR MIT"
 
 [dependencies]
 cron_tab = { version = "0.2", features = ["sync"] }
-chrono = "0.4.41"
-reqwest = { version = "0.12.22", features = ["blocking", "json"] }
-anyhow = "1.0.98"
-semver = "1.0.26"
-clap = { version = "4.5.43", features = ["derive"] }
-url = "2.5.4"
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.142"
-zip = "4.3.0"
-rodio = "0.21.1"
-indicatif = "0.18.0"
-regex = "1.11.1"
+chrono = "0.4"
+reqwest = { version = "0.12", features = ["blocking", "json"] }
+anyhow = "1.0"
+semver = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+url = "2.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+zip = "4.3"
+rodio = "0.21"
+indicatif = "0.18"
+regex = "1.11"
 
 [profile.release]
 strip = true
