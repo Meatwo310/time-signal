@@ -22,4 +22,3 @@ regex = "1.11.1"
 [profile.release]
 strip = true
 lto = true
-codegen-units = 1
