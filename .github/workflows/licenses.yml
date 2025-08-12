@@ -3,6 +3,7 @@
 name: 'Update LICENSES.html'
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'Cargo.lock'
