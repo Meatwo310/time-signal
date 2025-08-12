@@ -92,14 +92,21 @@ fn handle_gen(speaker_id: Option<u32>, url: String) -> Result<()> {
     Ok(())
 }
 
+fn create_progress_bar(length: u64, message: &str) -> Result<ProgressBar> {
+    let bar = ProgressBar::new(length)
+        .with_style(
+            ProgressStyle::with_template(&format!("{} [{{bar:24}}] {{pos:>2}}/{{len:>2}}", message))?
+                .progress_chars("#..")
+        )
+        .with_finish(ProgressFinish::AndLeave);
+    bar.force_draw();
+    Ok(bar)
+}
+
 fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> {
     let mut queries: HashMap<u32, HashMap<u32, String>> = HashMap::new();
 
-    let bar = ProgressBar::new(24*4)
-        .with_style(ProgressStyle::with_template("クエリを生成 [{bar:24}] {pos:>2}/{len:>2}")?
-            .progress_chars("#..")
-        ).with_finish(ProgressFinish::AndLeave);
-    bar.force_draw();
+    let bar = create_progress_bar(24 * 4, "クエリを生成")?;
 
     for hour in 0..24 {
         let mut minute_queries: HashMap<u32, String> = HashMap::new();
@@ -121,11 +128,7 @@ fn generate_voice_files(client: &VoicevoxClient, speaker_id: u32) -> Result<()> 
 
     std::fs::create_dir_all("voice_files")?;
 
-    let bar = ProgressBar::new(24*4)
-        .with_style(ProgressStyle::with_template("ボイスを生成 [{bar:24}] {pos:>2}/{len:>2}")?
-            .progress_chars("#..")
-        ).with_finish(ProgressFinish::AndLeave);
-    bar.force_draw();
+    let bar = create_progress_bar(24 * 4, "ボイスを生成")?;
 
     for hour in 0..24 {
         let hour_queries = queries.get(&hour).unwrap();
