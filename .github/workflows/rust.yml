@@ -48,7 +48,7 @@ jobs:
       shell: bash
       run: |
         mkdir -p ${{ env.BINARY_DIR }}
-        cp target/release/${{ env.BINARY_NAME }} ${{ env.BINARY_DIR }}
+        cp target/release/${{ env.BINARY_NAME }}${{ runner.os == 'Windows' && '.exe' || '' }} ${{ env.BINARY_DIR }}
 
     - name: Rename MacOS binary to prevent conflicts
       if: matrix.os == 'macos-latest'
