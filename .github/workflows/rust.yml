@@ -44,28 +44,11 @@ jobs:
     - name: Build
       run: cargo build --release --verbose
 
-    - name: Prepare binary for upload
-      id: prepare_binary
-      shell: bash
-      run: |
-        if [[ "${{ runner.os }}" == "macOS" ]]; then
-          # macOSの場合、バイナリ名に "-macos" を追加してリネーム
-          NEW_NAME="${{ env.BINARY_NAME }}-macos"
-          mv "target/release/${{ env.BINARY_NAME }}" "target/release/${NEW_NAME}"
-          echo "path=target/release/${NEW_NAME}" >> $GITHUB_OUTPUT
-        elif [[ "${{ runner.os }}" == "Windows" ]]; then
-          # Windowsの場合は .exe 拡張子を付けたパスを設定
-          echo "path=target/release/${{ env.BINARY_NAME }}.exe" >> $GITHUB_OUTPUT
-        else
-          # Linuxの場合は元のバイナリ名のパスを設定
-          echo "path=target/release/${{ env.BINARY_NAME }}" >> $GITHUB_OUTPUT
-        fi
-
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.BINARY_NAME }}-${{ matrix.os }}
-        path: ${{ steps.prepare_binary.outputs.path }}
+        path: target/release/${{ env.BINARY_NAME }}${{ runner.os == 'Windows' && '.exe' || '' }}
 
   release:
     name: Publish binaries to GitHub Releases
@@ -77,14 +60,37 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.8.0
+
+      - name: Install cargo-about
+        run: cargo install cargo-about
+
+      - name: Generate LICENSES.md
+        run: cargo about generate about.hbs > LICENSES.md
+
       - name: Download all artifacts
         uses: actions/download-artifact@v5
         with:
-          merge-multiple: true
           path: artifacts
+
+      - name: Add LICENSES.md to each artifact zip
+        run: |
+          cp LICENSES.md artifacts/*/
+
+      - name: Create ZIP files
+        run: |
+          cd ./artifacts
+          for dir in */; do
+            zip -j "${dir%/}.zip" "$dir"/*
+          done
 
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: artifacts/*
+          files: artifacts/*.zip
+
