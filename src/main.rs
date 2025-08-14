@@ -15,7 +15,7 @@ use std::path::Path;
 use std::thread::sleep;
 use std::time::Duration;
 use url::Url;
-use user_idle2::UserIdle;
+use user_idle::UserIdle;
 use zip::ZipArchive;
 
 #[derive(Parser)]

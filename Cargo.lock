@@ -2241,7 +2241,7 @@ dependencies = [
  "serde",
  "serde_json",
  "url",
- "user-idle2",
+ "user-idle",
  "zip",
 ]
 
@@ -2434,10 +2434,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "user-idle2"
-version = "0.6.2"
+name = "user-idle"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5bca33e3c575387dbc8bc8984bb9e86276a20f6a6516b85a0efc41ef39cd255"
+checksum = "433621584802937d26ab1b490236d802a9bc6d7176fe913cc12c2e51a790d5a2"
 dependencies = [
  "CoreFoundation-sys",
  "IOKit-sys",
@@ -2445,7 +2445,6 @@ dependencies = [
  "dbus",
  "mach 0.3.2",
  "windows-sys 0.48.0",
- "x11",
 ]
 
 [[package]]
@@ -3047,16 +3046,6 @@ name = "writeable"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ea2f10b9bb0928dfb1b42b65e1f9e36f7f54dbdf08457afefb38afcdec4fa2bb"
-
-[[package]]
-name = "x11"
-version = "2.21.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "502da5464ccd04011667b11c435cb992822c2c0dbde1770c988480d312a0db2e"
-dependencies = [
- "libc",
- "pkg-config",
-]
 
 [[package]]
 name = "yoke"

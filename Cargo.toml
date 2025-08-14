@@ -19,7 +19,7 @@ zip = "4.3"
 rodio = "0.21"
 indicatif = "0.18"
 regex = "1.11"
-user-idle2 = "0.6"
+user-idle = { version = "0.6", default-features = false, features = ["dbus"] }
 
 [profile.release]
 strip = true
