@@ -15,6 +15,7 @@ use std::path::Path;
 use std::thread::sleep;
 use std::time::Duration;
 use url::Url;
+use user_idle2::UserIdle;
 use zip::ZipArchive;
 
 #[derive(Parser)]
@@ -44,6 +45,10 @@ enum Commands {
         /// 時報の間隔。15分を指定すると、毎時0分、15分、30分、45分に音声が再生されます。
         #[arg(short, long, default_value = "15")]
         interval: u8,
+
+        /// 指定分以上操作がない場合、時報をスキップします。
+        #[arg(short='t', long, default_value = "10")]
+        idle_timeout: u64,
     }
 }
 
@@ -202,7 +207,7 @@ fn check_voice_files(interval: u8) -> Result<()> {
     Ok(())
 }
 
-fn handle_run(interval: u8) -> Result<()> {
+fn handle_run(interval: u8, idle_timeout: u64) -> Result<()> {
     validate_interval(interval)?;
     check_voice_files(interval)?;
 
@@ -226,6 +231,11 @@ fn handle_run(interval: u8) -> Result<()> {
 
         println!("{:02}:{:02}です", hour, minute);
 
+        if UserIdle::get_time().map(|u| u.as_minutes()).unwrap_or(0) >= idle_timeout {
+            println!("操作がないためスキップされました");
+            return;
+        }
+
         let filename = format!("voice_files/{:02}-{:02}.wav", hour, minute);
         let file = File::open(&filename)
             .expect(&format!("ファイル {filename} を開けませんでした"));
@@ -245,9 +255,9 @@ fn handle_run(interval: u8) -> Result<()> {
 
 fn main() -> Result<()> {
     let args = Cli::parse();
-    match args.command.unwrap_or(Commands::Run {interval: 15}) {
+    match args.command.unwrap_or(Commands::Run {interval: 15, idle_timeout: 10}) {
         Commands::Gen { speaker_id, url, interval } => handle_gen(speaker_id, url, interval)?,
-        Commands::Run { interval } => handle_run(interval)?,
+        Commands::Run { interval, idle_timeout } => handle_run(interval, idle_timeout)?,
     }
     Ok(())
 }
