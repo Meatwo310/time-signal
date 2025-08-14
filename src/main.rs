@@ -207,6 +207,10 @@ fn check_voice_files(interval: u8) -> Result<()> {
     Ok(())
 }
 
+fn get_idle_minutes() -> u64 {
+    UserIdle::get_time().map(|u| u.as_minutes()).unwrap_or(0)
+}
+
 fn handle_run(interval: u8, idle_timeout: u64) -> Result<()> {
     validate_interval(interval)?;
     check_voice_files(interval)?;
@@ -229,10 +233,10 @@ fn handle_run(interval: u8, idle_timeout: u64) -> Result<()> {
         let hour = now.hour();
         let minute = (now.minute() as u8) / interval * interval;
 
-        println!("{:02}:{:02}です", hour, minute);
-
-        if UserIdle::get_time().map(|u| u.as_minutes()).unwrap_or(0) >= idle_timeout {
-            println!("操作がないためスキップされました");
+        if idle_timeout == 0 || get_idle_minutes() < idle_timeout {
+            println!("{:02}:{:02}です", hour, minute);
+        } else {
+            println!("{:02}:{:02} - スキップ", hour, minute);
             return;
         }
 
