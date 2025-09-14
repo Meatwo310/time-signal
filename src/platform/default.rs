@@ -1,10 +1,10 @@
 use crate::platform::icon::get_icon_source;
 use crate::Message;
-use anyhow::{Context, Result};
+use anyhow::Context;
 use std::sync::mpsc;
 use tray_item::TrayItem;
 
-pub fn run_tray() -> Result<()> {
+pub fn run_tray() -> anyhow::Result<()> {
     let mut tray = TrayItem::new(
         "Time Signal",
         get_icon_source()?

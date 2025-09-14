@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-pub fn get_icon_source() -> Result<IconSource> {
+pub fn get_icon_source() -> anyhow::Result<IconSource> {
     let cursor = Cursor::new(include_bytes!("../../../icons/time-signal.png"));
     let decoder = png::Decoder::new(cursor);
     let mut reader = decoder.read_info()?;
