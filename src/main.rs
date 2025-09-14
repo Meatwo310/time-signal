@@ -1,5 +1,7 @@
 mod voicevox;
+mod platform;
 
+use crate::platform::run_tray;
 use crate::voicevox::VoicevoxClient;
 use anyhow::{Context, Result};
 use chrono::{Local, Timelike};
@@ -12,8 +14,6 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{stdout, Cursor, Read, Write};
 use std::path::Path;
-use std::sync::mpsc;
-use tray_item::{IconSource, TrayItem};
 use url::Url;
 use user_idle::UserIdle;
 use zip::ZipArchive;
@@ -215,29 +215,6 @@ fn get_idle_minutes() -> u64 {
     UserIdle::get_time().map(|u| u.as_minutes()).unwrap_or(0)
 }
 
-#[cfg(target_os = "windows")]
-fn get_icon_source() -> Result<IconSource> {
-    Ok(IconSource::Resource("tray-default"))
-}
-
-/// [`tray_item::IconSource`]側のcfg属性による制約のため、`unix`ではなく`macos`と`linux`を指定
-#[cfg(any(target_os = "macos", all(target_os = "linux", feature = "ksni")))]
-fn get_icon_source() -> Result<IconSource> {
-    let cursor = Cursor::new(include_bytes!("../icons/time-signal.png"));
-    let decoder = png::Decoder::new(cursor);
-    let mut reader = decoder.read_info()?;
-    let mut buf = vec![0; reader.output_buffer_size().unwrap()];
-    let info = reader.next_frame(&mut buf)?;
-    let bytes = &buf[..info.buffer_size()];
-
-    Ok(IconSource::Data {
-        data: bytes.to_vec(),
-        height: 256,
-        width: 256,
-    })
-}
-
-
 fn handle_run(interval: u8, idle_timeout: u64) -> Result<()> {
     validate_interval(interval)?;
     check_voice_files(interval)?;
@@ -280,36 +257,7 @@ fn handle_run(interval: u8, idle_timeout: u64) -> Result<()> {
     cron.start();
     println!("cronスケジューラを開始しました！");
 
-    let mut tray = TrayItem::new(
-        "Time Signal",
-        IconSource::Resource("tray-default")
-    ).context("トレイアイコンの作成に失敗しました")?;
-
-    tray.add_label("Time Signal is running.")?;
-
-    tray.inner_mut().add_separator()?;
-
-    let (tx, rx) = mpsc::sync_channel(1);
-
-    let quit_tx = tx.clone();
-    tray.add_menu_item("Quit", move || {
-        quit_tx.send(Message::Quit).unwrap();
-    })?;
-
-    loop {
-        match rx.recv() {
-            Ok(Message::Quit) => {
-                println!("終了しています...");
-                break;
-            }
-            Err(e) => {
-                println!("エラー: {e}");
-                break;
-            }
-        }
-    }
-
-    Ok(())
+    run_tray()
 }
 
 fn main() -> Result<()> {
