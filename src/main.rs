@@ -12,8 +12,8 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{stdout, Cursor, Read, Write};
 use std::path::Path;
-use std::thread::sleep;
-use std::time::Duration;
+use std::sync::mpsc;
+use tray_item::{IconSource, TrayItem};
 use url::Url;
 use user_idle::UserIdle;
 use zip::ZipArchive;
@@ -50,6 +50,10 @@ enum Commands {
         #[arg(short='t', long, default_value = "10")]
         idle_timeout: u64,
     }
+}
+
+enum Message {
+    Quit,
 }
 
 fn validate_interval(interval: u8) -> Result<()> {
@@ -252,9 +256,37 @@ fn handle_run(interval: u8, idle_timeout: u64) -> Result<()> {
 
     cron.start();
     println!("cronスケジューラを開始しました！");
+
+    let mut tray = TrayItem::new(
+        "Time Signal",
+        IconSource::Resource("tray-default")
+    ).context("トレイアイコンの作成に失敗しました")?;
+
+    tray.add_label("Time Signal is running.")?;
+
+    tray.inner_mut().add_separator()?;
+
+    let (tx, rx) = mpsc::sync_channel(1);
+
+    let quit_tx = tx.clone();
+    tray.add_menu_item("Quit", move || {
+        quit_tx.send(Message::Quit).unwrap();
+    })?;
+
     loop {
-        sleep(Duration::from_secs(3600));
+        match rx.recv() {
+            Ok(Message::Quit) => {
+                println!("終了しています...");
+                break;
+            }
+            Err(e) => {
+                println!("エラー: {e}");
+                break;
+            }
+        }
     }
+
+    Ok(())
 }
 
 fn main() -> Result<()> {

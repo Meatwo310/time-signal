@@ -20,6 +20,10 @@ rodio = "0.21"
 indicatif = "0.18"
 regex = "1.11"
 user-idle = { version = "0.6", default-features = false, features = ["dbus"] }
+tray-item = "0.10.0"
+
+[build-dependencies]
+embed-resource = "3.0.5"
 
 [profile.release]
 strip = true
