@@ -2,7 +2,7 @@ use crate::platform::icon::get_icon_source;
 use tray_item::TrayItem;
 
 pub fn run_tray() -> anyhow::Result<()> {
-    let mut tray = TrayItem::new("Time Signal", get_icon_source())?;
+    let mut tray = TrayItem::new("Time Signal", get_icon_source()?)?;
 
     tray.add_label("Time Signal")?;
 
