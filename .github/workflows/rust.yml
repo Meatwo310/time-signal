@@ -44,11 +44,21 @@ jobs:
     - name: Build
       run: cargo build --release --verbose
 
+    - name: Prepare artifact
+      run: |
+        mkdir artifact
+        cp target/release/${{ env.BINARY_NAME }}${{ runner.os == 'Windows' && '.exe' || '' }} artifact/
+
+    - name: Add PS1 script to windows artifact
+      if: matrix.os == 'windows-latest'
+      run: |
+        cp no-terminal.ps1 artifact/
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.BINARY_NAME }}-${{ matrix.os }}
-        path: target/release/${{ env.BINARY_NAME }}${{ runner.os == 'Windows' && '.exe' || '' }}
+        path: artifact/
 
   release:
     name: Publish binaries to GitHub Releases
