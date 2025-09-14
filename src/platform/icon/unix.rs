@@ -1,4 +1,5 @@
 use std::io::Cursor;
+use tray_item::IconSource;
 
 pub fn get_icon_source() -> anyhow::Result<IconSource> {
     let cursor = Cursor::new(include_bytes!("../../../icons/time-signal.png"));
