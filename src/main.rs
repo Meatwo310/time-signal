@@ -1,5 +1,7 @@
 mod voicevox;
+mod platform;
 
+use crate::platform::run_tray;
 use crate::voicevox::VoicevoxClient;
 use anyhow::{Context, Result};
 use chrono::{Local, Timelike};
@@ -12,8 +14,6 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{stdout, Cursor, Read, Write};
 use std::path::Path;
-use std::thread::sleep;
-use std::time::Duration;
 use url::Url;
 use user_idle::UserIdle;
 use zip::ZipArchive;
@@ -49,6 +49,10 @@ enum Commands {
         /// 指定分以上操作がない場合、時報をスキップします。
         #[arg(short='t', long, default_value = "10")]
         idle_timeout: u64,
+
+        /// CLIモードで実行します。トレイアイコンは表示されません。
+        #[arg(long)]
+        cli: bool
     }
 }
 
@@ -211,7 +215,7 @@ fn get_idle_minutes() -> u64 {
     UserIdle::get_time().map(|u| u.as_minutes()).unwrap_or(0)
 }
 
-fn handle_run(interval: u8, idle_timeout: u64) -> Result<()> {
+fn handle_run(interval: u8, idle_timeout: u64, cli: bool) -> Result<()> {
     validate_interval(interval)?;
     check_voice_files(interval)?;
 
@@ -249,19 +253,23 @@ fn handle_run(interval: u8, idle_timeout: u64) -> Result<()> {
         let sink = rodio::play(handle.mixer(), file).unwrap();
         sink.sleep_until_end();
     })?;
-
     cron.start();
     println!("cronスケジューラを開始しました！");
-    loop {
-        sleep(Duration::from_secs(3600));
+
+    if cli {
+        std::thread::park();
+        Ok(())
+    } else {
+        println!("システムトレイへ常駐します");
+        run_tray()
     }
 }
 
 fn main() -> Result<()> {
     let args = Cli::parse();
-    match args.command.unwrap_or(Commands::Run {interval: 15, idle_timeout: 10}) {
+    match args.command.unwrap_or(Commands::Run {interval: 15, idle_timeout: 10, cli: false}) {
         Commands::Gen { speaker_id, url, interval } => handle_gen(speaker_id, url, interval)?,
-        Commands::Run { interval, idle_timeout } => handle_run(interval, idle_timeout)?,
+        Commands::Run { interval, idle_timeout, cli } => handle_run(interval, idle_timeout, cli)?,
     }
     Ok(())
 }
