@@ -18,7 +18,7 @@ pub fn run_tray() -> anyhow::Result<()> {
 
     let (tx, rx) = mpsc::sync_channel(1);
     let quit_tx = tx.clone();
-    tray.add_menu_item("Quit", move || {
+    tray.add_menu_item("終了", move || {
         quit_tx.send(Message::Quit).unwrap();
     })?;
 

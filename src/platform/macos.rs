@@ -7,7 +7,7 @@ pub fn run_tray() -> anyhow::Result<()> {
     tray.add_label("Time Signal")?;
 
     let mut inner = tray.inner_mut();
-    inner.add_quit_item("Quit");
+    inner.add_quit_item("終了");
     inner.display();
 
     Ok(())
