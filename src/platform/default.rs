@@ -1,8 +1,11 @@
 use crate::platform::icon::get_icon_source;
-use crate::Message;
 use anyhow::Context;
 use std::sync::mpsc;
 use tray_item::TrayItem;
+
+enum Message {
+    Quit,
+}
 
 pub fn run_tray() -> anyhow::Result<()> {
     let mut tray = TrayItem::new(

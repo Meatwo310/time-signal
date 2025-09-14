@@ -52,10 +52,6 @@ enum Commands {
     }
 }
 
-enum Message {
-    Quit,
-}
-
 fn validate_interval(interval: u8) -> Result<()> {
     if interval == 0 || interval > 60 {
         anyhow::bail!("intervalは1から60の間で指定してください。指定された値: {interval}");
