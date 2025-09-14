@@ -215,6 +215,29 @@ fn get_idle_minutes() -> u64 {
     UserIdle::get_time().map(|u| u.as_minutes()).unwrap_or(0)
 }
 
+#[cfg(target_os = "windows")]
+fn get_icon_source() -> Result<IconSource> {
+    Ok(IconSource::Resource("tray-default"))
+}
+
+/// [`tray_item::IconSource`]側のcfg属性による制約のため、`unix`ではなく`macos`と`linux`を指定
+#[cfg(any(target_os = "macos", all(target_os = "linux", feature = "ksni")))]
+fn get_icon_source() -> Result<IconSource> {
+    let cursor = Cursor::new(include_bytes!("../icons/time-signal.png"));
+    let decoder = png::Decoder::new(cursor);
+    let mut reader = decoder.read_info()?;
+    let mut buf = vec![0; reader.output_buffer_size().unwrap()];
+    let info = reader.next_frame(&mut buf)?;
+    let bytes = &buf[..info.buffer_size()];
+
+    Ok(IconSource::Data {
+        data: bytes.to_vec(),
+        height: 256,
+        width: 256,
+    })
+}
+
+
 fn handle_run(interval: u8, idle_timeout: u64) -> Result<()> {
     validate_interval(interval)?;
     check_voice_files(interval)?;
