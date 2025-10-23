@@ -71,8 +71,7 @@ pub fn handle_run(interval: u8, idle_timeout: u64, cli: bool) -> Result<()> {
         }
 
         let filename = format!("voice_files/{:02}-{:02}.wav", hour, minute);
-        let file = File::open(&filename)
-            .expect(&format!("ファイル {filename} を開けませんでした"));
+        let file = File::open(&filename).expect(&format!("ファイル {filename} を開けませんでした"));
 
         let mut handle = rodio::OutputStreamBuilder::open_default_stream().unwrap();
         handle.log_on_drop(false);

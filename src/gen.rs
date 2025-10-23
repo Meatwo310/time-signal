@@ -17,9 +17,7 @@ pub fn validate_interval(interval: u8) -> Result<()> {
 pub fn handle_gen(speaker_id: Option<u32>, url: String, interval: u8) -> Result<()> {
     validate_interval(interval)?;
 
-    let client = VoicevoxClient::new(Url::parse(&url)
-        .context("VOICEVOXサーバーのURLが不正です")?
-    );
+    let client = VoicevoxClient::new(Url::parse(&url).context("VOICEVOXサーバーのURLが不正です")?);
 
     let required = VersionReq::parse(">=0.24.0")?;
     let current = Version::parse(&client.get_version()?)?;
@@ -27,9 +25,7 @@ pub fn handle_gen(speaker_id: Option<u32>, url: String, interval: u8) -> Result<
     if required.matches(&current) {
         println!("VOICEVOX: {current}");
     } else {
-        println!(
-            "警告: VOICEVOX {current} は必要なバージョン {required} を満たしていません",
-        );
+        println!("警告: VOICEVOX {current} は必要なバージョン {required} を満たしていません",);
     }
 
     let speakers = client.list_speakers()?;
@@ -48,12 +44,7 @@ pub fn handle_gen(speaker_id: Option<u32>, url: String, interval: u8) -> Result<
     let speaker_id = speaker_id.context("ここでスタイルIDが提供されるべきです")?;
     let (speaker, style) = client.find_speaker_and_style(speaker_id, &speakers)?;
 
-    println!(
-        "{}. {} ({})",
-        style.id,
-        speaker.name,
-        style.name,
-    );
+    println!("{}. {} ({})", style.id, speaker.name, style.name,);
 
     if !client.is_initialized_speaker(speaker_id)? {
         print!("スタイルを初期化中... ");
@@ -70,8 +61,11 @@ pub fn handle_gen(speaker_id: Option<u32>, url: String, interval: u8) -> Result<
 fn create_progress_bar(length: u64, message: &str) -> Result<ProgressBar> {
     let bar = ProgressBar::new(length)
         .with_style(
-            ProgressStyle::with_template(&format!("{} [{{bar:24}}] {{pos:>2}}/{{len:>2}}", message))?
-                .progress_chars("#..")
+            ProgressStyle::with_template(&format!(
+                "{} [{{bar:24}}] {{pos:>2}}/{{len:>2}}",
+                message
+            ))?
+            .progress_chars("#.."),
         )
         .with_finish(ProgressFinish::AndLeave);
     bar.force_draw();

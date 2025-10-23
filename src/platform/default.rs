@@ -8,10 +8,8 @@ enum Message {
 }
 
 pub fn run_tray() -> anyhow::Result<()> {
-    let mut tray = TrayItem::new(
-        "Time Signal",
-        get_icon_source()?
-    ).context("トレイアイコンの作成に失敗しました")?;
+    let mut tray = TrayItem::new("Time Signal", get_icon_source()?)
+        .context("トレイアイコンの作成に失敗しました")?;
 
     tray.add_label("Time Signal")?;
     tray.inner_mut().add_separator()?;

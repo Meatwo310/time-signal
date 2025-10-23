@@ -1,7 +1,7 @@
-mod voicevox;
-mod platform;
 mod gen;
+mod platform;
 mod run;
+mod voicevox;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -9,7 +9,7 @@ use clap::{Parser, Subcommand};
 #[derive(Parser)]
 struct Cli {
     #[command(subcommand)]
-    command: Option<Commands>
+    command: Option<Commands>,
 }
 
 #[derive(Subcommand)]
@@ -35,20 +35,32 @@ enum Commands {
         interval: u8,
 
         /// 指定分以上操作がない場合、時報をスキップします。
-        #[arg(short='t', long, default_value = "10")]
+        #[arg(short = 't', long, default_value = "10")]
         idle_timeout: u64,
 
         /// CLIモードで実行します。トレイアイコンは表示されません。
         #[arg(long)]
-        cli: bool
-    }
+        cli: bool,
+    },
 }
 
 fn main() -> Result<()> {
     let args = Cli::parse();
-    match args.command.unwrap_or(Commands::Run {interval: 15, idle_timeout: 10, cli: false}) {
-        Commands::Gen { speaker_id, url, interval } => gen::handle_gen(speaker_id, url, interval)?,
-        Commands::Run { interval, idle_timeout, cli } => run::handle_run(interval, idle_timeout, cli)?,
+    match args.command.unwrap_or(Commands::Run {
+        interval: 15,
+        idle_timeout: 10,
+        cli: false,
+    }) {
+        Commands::Gen {
+            speaker_id,
+            url,
+            interval,
+        } => gen::handle_gen(speaker_id, url, interval)?,
+        Commands::Run {
+            interval,
+            idle_timeout,
+            cli,
+        } => run::handle_run(interval, idle_timeout, cli)?,
     }
     Ok(())
 }
